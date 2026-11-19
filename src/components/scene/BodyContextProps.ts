@@ -256,7 +256,7 @@ export function createBodyContextProps(
 
   // =========================================================
   // 3. MEMBRO SUPERIOR — BRAÇO DE APOIO ESQUERDO (#37 a #43)
-  // Shoulder (-1.62, 0.64, -0.52) -> Elbow (-1.34, -0.26, -0.28) -> Wrist (-0.54, -0.24, -0.06)
+  // Shoulder (-1.75, 0.64, -0.56) -> Elbow (-1.50, -0.26, -0.34) -> Wrist (-0.88, -0.26, -0.20)
   // =========================================================
   const arm = new THREE.Group();
   arm.scale.setScalar(0.001);
@@ -265,29 +265,29 @@ export function createBodyContextProps(
 
   // Shoulder sphere (#38 Ombro)
   const shoulder = new THREE.Mesh(
-    new THREE.SphereGeometry(0.32, 22, 18),
+    new THREE.SphereGeometry(0.3, 22, 18),
     skinMat
   );
-  shoulder.position.set(-1.62, 0.64, -0.52);
+  shoulder.position.set(-1.75, 0.64, -0.56);
   shoulder.castShadow = true;
   arm.add(shoulder);
 
   // Dark torso shoulder mount cap
   const shoulderMount = new THREE.Mesh(
-    new THREE.SphereGeometry(0.3, 18, 16),
+    new THREE.SphereGeometry(0.28, 18, 16),
     cuffMat
   );
-  shoulderMount.position.set(-1.84, 0.62, -0.62);
+  shoulderMount.position.set(-1.96, 0.62, -0.66);
   arm.add(shoulderMount);
 
   // Upper arm (#40 Braço) connecting shoulder -> elbow
-  const upperArmStart = new THREE.Vector3(-1.62, 0.64, -0.52);
-  const elbowPos = new THREE.Vector3(-1.34, -0.26, -0.28);
+  const upperArmStart = new THREE.Vector3(-1.75, 0.64, -0.56);
+  const elbowPos = new THREE.Vector3(-1.5, -0.26, -0.34);
   const upperArmVec = elbowPos.clone().sub(upperArmStart);
   const upperArmLen = upperArmVec.length();
 
   const upperArm = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.22, Math.max(0.1, upperArmLen - 0.36), 10, 20),
+    new THREE.CapsuleGeometry(0.21, Math.max(0.1, upperArmLen - 0.34), 10, 20),
     skinMat
   );
   upperArm.position.copy(upperArmStart).addScaledVector(upperArmVec, 0.5);
@@ -300,20 +300,20 @@ export function createBodyContextProps(
 
   // Elbow sphere (#41 Cotovelo)
   const elbow = new THREE.Mesh(
-    new THREE.SphereGeometry(0.22, 20, 16),
+    new THREE.SphereGeometry(0.21, 20, 16),
     jointMat
   );
   elbow.position.copy(elbowPos);
   elbow.castShadow = true;
   arm.add(elbow);
 
-  // Forearm (#42 Antebraço) connecting elbow -> left wrist support (-0.58, -0.24, -0.06)
-  const wristJoinPos = new THREE.Vector3(-0.62, -0.24, -0.06);
+  // Forearm (#42 Antebraço) connecting elbow -> left wrist support (-0.92, -0.26, -0.20)
+  const wristJoinPos = new THREE.Vector3(-0.92, -0.26, -0.2);
   const forearmVec = wristJoinPos.clone().sub(elbowPos);
   const forearmLen = forearmVec.length();
 
   const forearm = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.185, Math.max(0.1, forearmLen - 0.3), 10, 20),
+    new THREE.CapsuleGeometry(0.18, Math.max(0.1, forearmLen - 0.28), 10, 20),
     skinMat
   );
   forearm.position.copy(elbowPos).addScaledVector(forearmVec, 0.5);
