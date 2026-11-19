@@ -60,13 +60,13 @@ function getPoseFromElis(
   // Base relaxed studio pose
   const pose: HandPoseTargets = {
     wristRotX: 0.08,
-    wristRotY: -sideSign * 0.12,
+    wristRotY: -sideSign * 0.14,
     wristRotZ: 0,
-    thumbCmcX: 0.2,
-    thumbCmcY: sideSign * 0.35,
-    thumbCmcZ: -sideSign * 0.52,
-    thumbMcpX: 0.18,
-    thumbIpX: 0.15,
+    thumbCmcX: 0.24,
+    thumbCmcY: -sideSign * 0.72,
+    thumbCmcZ: -sideSign * 0.45,
+    thumbMcpX: 0.2,
+    thumbIpX: 0.16,
     fingerMcpX: 0.16,
     fingerPipX: 0.18,
     fingerDipX: 0.12,
@@ -75,47 +75,47 @@ function getPoseFromElis(
 
   // Etapa 1: Polegar
   switch (thumbChar) {
-    case 'q': // fechado (encostado na lateral / fechado)
-      pose.thumbCmcX = 0.55;
-      pose.thumbCmcY = sideSign * 0.72;
-      pose.thumbCmcZ = -sideSign * 0.15;
-      pose.thumbMcpX = 0.65;
-      pose.thumbIpX = 0.55;
+    case 'q': // fechado (dobrado sobre a frente/lateral do punho)
+      pose.thumbCmcX = 0.68;
+      pose.thumbCmcY = -sideSign * 1.18;
+      pose.thumbCmcZ = sideSign * 0.24;
+      pose.thumbMcpX = 0.55;
+      pose.thumbIpX = 0.48;
       break;
-    case 'w': // na palma (atravessado sobre a palma)
-      pose.thumbCmcX = 0.85;
-      pose.thumbCmcY = sideSign * 1.12;
-      pose.thumbCmcZ = -sideSign * 0.05;
-      pose.thumbMcpX = 0.52;
-      pose.thumbIpX = 0.35;
+    case 'w': // na palma (atravessado sobre o centro da palma)
+      pose.thumbCmcX = 0.45;
+      pose.thumbCmcY = -sideSign * 1.28;
+      pose.thumbCmcZ = sideSign * 0.48;
+      pose.thumbMcpX = 0.42;
+      pose.thumbIpX = 0.32;
       break;
-    case 'e': // curvo
+    case 'e': // curvo (em C)
       pose.thumbCmcX = 0.42;
-      pose.thumbCmcY = sideSign * 0.55;
-      pose.thumbCmcZ = -sideSign * 0.58;
-      pose.thumbMcpX = 0.65;
-      pose.thumbIpX = 0.85;
+      pose.thumbCmcY = -sideSign * 0.98;
+      pose.thumbCmcZ = -sideSign * 0.42;
+      pose.thumbMcpX = 0.68;
+      pose.thumbIpX = 0.88;
       break;
-    case 'r': // tridimensional (projetado para frente em oposição)
-      pose.thumbCmcX = 0.85;
-      pose.thumbCmcY = sideSign * 0.22;
-      pose.thumbCmcZ = -sideSign * 0.32;
-      pose.thumbMcpX = 0.12;
-      pose.thumbIpX = 0.08;
+    case 'r': // tridimensional (projetado para frente em oposição +Z)
+      pose.thumbCmcX = 1.08;
+      pose.thumbCmcY = -sideSign * 0.35;
+      pose.thumbCmcZ = -sideSign * 0.18;
+      pose.thumbMcpX = 0.08;
+      pose.thumbIpX = 0.06;
       break;
-    case 't': // horizontal (abduzido horizontalmente)
-      pose.thumbCmcX = 0.06;
-      pose.thumbCmcY = sideSign * 0.12;
-      pose.thumbCmcZ = -sideSign * 1.18;
+    case 't': // horizontal (abduzido horizontalmente para fora)
+      pose.thumbCmcX = 0.08;
+      pose.thumbCmcY = -sideSign * 0.32;
+      pose.thumbCmcZ = -sideSign * 1.15;
       pose.thumbMcpX = 0.05;
       pose.thumbIpX = 0.04;
       break;
     case 'y': // vertical (estendido para cima paralelo ao indicador)
-      pose.thumbCmcX = 0.05;
-      pose.thumbCmcY = sideSign * 0.16;
-      pose.thumbCmcZ = -sideSign * 0.24;
-      pose.thumbMcpX = 0.02;
-      pose.thumbIpX = 0.02;
+      pose.thumbCmcX = 0.12;
+      pose.thumbCmcY = -sideSign * 0.45;
+      pose.thumbCmcZ = -sideSign * 0.14;
+      pose.thumbMcpX = 0.04;
+      pose.thumbIpX = 0.04;
       break;
     default:
       break;
@@ -234,8 +234,8 @@ function createArticulatedHand(
   accentMat: THREE.Material
 ): HandRig {
   const root = new THREE.Group();
-  const baseX = sideSign * 1.24;
-  root.position.set(baseX, -0.18, 0);
+  const baseX = sideSign * 0.96;
+  root.position.set(baseX, -0.16, 0);
 
   const wrist = new THREE.Group();
   root.add(wrist);
@@ -524,7 +524,7 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
     const scene = new THREE.Scene();
 
     const camera = new THREE.PerspectiveCamera(36, width / height, 0.1, 50);
-    camera.position.set(0, 0.35, 5.15);
+    camera.position.set(0, 0.28, 5.75);
     cameraRef.current = camera;
 
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -790,7 +790,7 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
 
   const handleResetCamera = () => {
     if (cameraRef.current && controlsRef.current) {
-      cameraRef.current.position.set(0, 0.35, 5.15);
+      cameraRef.current.position.set(0, 0.28, 5.75);
       controlsRef.current.target.set(0, 0.05, 0);
       controlsRef.current.update();
     }

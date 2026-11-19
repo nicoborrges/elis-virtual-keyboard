@@ -204,8 +204,8 @@ export const SelectorKeyboard: React.FC<SelectorKeyboardProps> = ({
                 <span
                   aria-hidden="true"
                   className={cn(
-                    'font-elis leading-none transition-transform duration-150 group-hover:scale-110',
-                    activeStep <= 3 ? 'text-[30px]' : 'text-[26px]'
+                    'font-elis leading-none translate-y-[2px] transition-transform duration-150 group-hover:scale-110',
+                    activeStep <= 3 ? 'text-[28px]' : 'text-[24px]'
                   )}
                 >
                   {item.char}
