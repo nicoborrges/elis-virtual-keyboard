@@ -229,8 +229,8 @@ function createArticulatedHand(
   accentMat: THREE.Material
 ): HandRig {
   const root = new THREE.Group();
-  const baseX = sideSign * 0.96;
-  root.position.set(baseX, -0.16, 0);
+  const baseX = sideSign * 0.88;
+  root.position.set(baseX, -0.18, 0);
 
   const wrist = new THREE.Group();
   root.add(wrist);
@@ -542,17 +542,21 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
 
     const scene = new THREE.Scene();
 
-    const camera = new THREE.PerspectiveCamera(36, width / height, 0.1, 50);
-    camera.position.set(0, 0.28, 5.75);
+    const computeIdealZ = (aspect: number) =>
+      Math.max(6.4, 7.7 / Math.max(aspect, 0.55));
+
+    const initialAspect = width / height;
+    const camera = new THREE.PerspectiveCamera(38, initialAspect, 0.1, 60);
+    camera.position.set(0, 0.3, computeIdealZ(initialAspect));
     cameraRef.current = camera;
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
     controls.enablePan = false;
-    controls.minDistance = 2.8;
-    controls.maxDistance = 8.2;
-    controls.target.set(0, 0.05, 0);
+    controls.minDistance = 3.5;
+    controls.maxDistance = 13;
+    controls.target.set(0, 0.14, 0);
     controlsRef.current = controls;
 
     // 3-Point Studio Lighting
@@ -660,8 +664,15 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
       for (const entry of entries) {
         const w = Math.max(100, entry.contentRect.width);
         const h = Math.max(100, entry.contentRect.height);
-        camera.aspect = w / h;
+        const nextAspect = w / h;
+        camera.aspect = nextAspect;
         camera.updateProjectionMatrix();
+        // Keep current viewing direction while ensuring both hands remain framed on aspect changes
+        const dir = camera.position.clone().sub(controls.target).normalize();
+        const minFitDist = computeIdealZ(nextAspect);
+        if (camera.position.distanceTo(controls.target) < minFitDist) {
+          camera.position.copy(controls.target).addScaledVector(dir, minFitDist);
+        }
         renderer.setSize(w, h);
       }
     });
@@ -878,8 +889,10 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
 
   const handleResetCamera = () => {
     if (cameraRef.current && controlsRef.current) {
-      cameraRef.current.position.set(0, 0.28, 5.75);
-      controlsRef.current.target.set(0, 0.05, 0);
+      const aspect = cameraRef.current.aspect || 1;
+      const idealZ = Math.max(6.4, 7.7 / Math.max(aspect, 0.55));
+      cameraRef.current.position.set(0, 0.3, idealZ);
+      controlsRef.current.target.set(0, 0.14, 0);
       controlsRef.current.update();
     }
   };
