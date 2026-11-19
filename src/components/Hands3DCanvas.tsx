@@ -41,6 +41,7 @@ interface HandPoseTargets {
   wristRotX: number;
   wristRotY: number;
   wristRotZ: number;
+  thumbBaseZ: number;
   thumbCmcX: number;
   thumbCmcY: number;
   thumbCmcZ: number;
@@ -62,11 +63,12 @@ function getPoseFromElis(
     wristRotX: 0.08,
     wristRotY: -sideSign * 0.14,
     wristRotZ: 0,
+    thumbBaseZ: 0.14,
     thumbCmcX: 0.24,
-    thumbCmcY: -sideSign * 0.72,
+    thumbCmcY: -sideSign * 0.42,
     thumbCmcZ: -sideSign * 0.45,
-    thumbMcpX: 0.2,
-    thumbIpX: 0.16,
+    thumbMcpX: 0.18,
+    thumbIpX: 0.14,
     fingerMcpX: 0.16,
     fingerPipX: 0.18,
     fingerDipX: 0.12,
@@ -75,45 +77,51 @@ function getPoseFromElis(
 
   // Etapa 1: Polegar
   switch (thumbChar) {
-    case 'q': // fechado (dobrado sobre a frente/lateral do punho)
-      pose.thumbCmcX = 0.68;
-      pose.thumbCmcY = -sideSign * 1.18;
-      pose.thumbCmcZ = sideSign * 0.24;
+    case 'q': // fechado (dobrado sobre a frente da palma / punho fechado, sem atravessar)
+      pose.thumbBaseZ = 0.24;
+      pose.thumbCmcX = 0.34;
+      pose.thumbCmcY = sideSign * 0.12;
+      pose.thumbCmcZ = sideSign * 0.72;
+      pose.thumbMcpX = 0.26;
+      pose.thumbIpX = 0.22;
+      break;
+    case 'w': // na palma (apoiado rente sobre a superfície frontal da palma, sem atravessar)
+      pose.thumbBaseZ = 0.24;
+      pose.thumbCmcX = 0.08;
+      pose.thumbCmcY = sideSign * 0.08;
+      pose.thumbCmcZ = sideSign * 0.96;
+      pose.thumbMcpX = 0.04;
+      pose.thumbIpX = 0.03;
+      break;
+    case 'e': // curvo (em C, à frente da palma)
+      pose.thumbBaseZ = 0.16;
+      pose.thumbCmcX = 0.38;
+      pose.thumbCmcY = -sideSign * 0.35;
+      pose.thumbCmcZ = -sideSign * 0.22;
       pose.thumbMcpX = 0.55;
-      pose.thumbIpX = 0.48;
-      break;
-    case 'w': // na palma (atravessado sobre o centro da palma)
-      pose.thumbCmcX = 0.45;
-      pose.thumbCmcY = -sideSign * 1.28;
-      pose.thumbCmcZ = sideSign * 0.48;
-      pose.thumbMcpX = 0.42;
-      pose.thumbIpX = 0.32;
-      break;
-    case 'e': // curvo (em C)
-      pose.thumbCmcX = 0.42;
-      pose.thumbCmcY = -sideSign * 0.98;
-      pose.thumbCmcZ = -sideSign * 0.42;
-      pose.thumbMcpX = 0.68;
-      pose.thumbIpX = 0.88;
+      pose.thumbIpX = 0.72;
       break;
     case 'r': // tridimensional (projetado para frente em oposição +Z)
-      pose.thumbCmcX = 1.08;
-      pose.thumbCmcY = -sideSign * 0.35;
-      pose.thumbCmcZ = -sideSign * 0.18;
+      pose.thumbBaseZ = 0.14;
+      pose.thumbCmcX = 1.12;
+      pose.thumbCmcY = -sideSign * 0.15;
+      pose.thumbCmcZ = -sideSign * 0.12;
       pose.thumbMcpX = 0.08;
       pose.thumbIpX = 0.06;
       break;
     case 't': // horizontal (abduzido horizontalmente para fora)
+      pose.thumbBaseZ = 0.12;
       pose.thumbCmcX = 0.08;
-      pose.thumbCmcY = -sideSign * 0.32;
+      pose.thumbCmcY = -sideSign * 0.15;
       pose.thumbCmcZ = -sideSign * 1.15;
       pose.thumbMcpX = 0.05;
       pose.thumbIpX = 0.04;
       break;
     case 'y': // vertical (estendido para cima paralelo ao indicador)
+      pose.thumbBaseZ = 0.12;
       pose.thumbCmcX = 0.12;
-      pose.thumbCmcY = -sideSign * 0.45;
-      pose.thumbCmcZ = -sideSign * 0.14;
+      pose.thumbCmcY = -sideSign * 0.22;
+      pose.thumbCmcZ = -sideSign * 0.12;
       pose.thumbMcpX = 0.04;
       pose.thumbIpX = 0.04;
       break;
@@ -259,11 +267,11 @@ function createArticulatedHand(
   wrist.add(palmMesh);
 
   const thenarPad = new THREE.Mesh(
-    new THREE.SphereGeometry(0.24, 18, 16),
+    new THREE.SphereGeometry(0.22, 18, 16),
     skinMat
   );
-  thenarPad.position.set(sideSign * 0.24, -0.14, 0.09);
-  thenarPad.scale.set(0.95, 1.35, 0.65);
+  thenarPad.position.set(sideSign * 0.22, -0.15, 0.08);
+  thenarPad.scale.set(0.88, 1.18, 0.42);
   wrist.add(thenarPad);
 
   const palmCenterPad = new THREE.Mesh(
@@ -350,7 +358,7 @@ function createArticulatedHand(
 
   // Articulated Thumb (Polegar)
   const cmc = new THREE.Group();
-  cmc.position.set(sideSign * 0.42, -0.18, 0.07);
+  cmc.position.set(sideSign * 0.4, -0.18, 0.14);
   wrist.add(cmc);
 
   const cmcJoint = new THREE.Mesh(
@@ -801,6 +809,7 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
       hand.wrist.rotation.z = lerp(hand.wrist.rotation.z, pose.wristRotZ + extraWristZ, speed);
 
       // Thumb joints
+      hand.thumb.cmc.position.z = lerp(hand.thumb.cmc.position.z, pose.thumbBaseZ, speed);
       hand.thumb.cmc.rotation.x = lerp(hand.thumb.cmc.rotation.x, pose.thumbCmcX, speed);
       hand.thumb.cmc.rotation.y = lerp(hand.thumb.cmc.rotation.y, pose.thumbCmcY, speed);
       hand.thumb.cmc.rotation.z = lerp(hand.thumb.cmc.rotation.z, pose.thumbCmcZ, speed);
