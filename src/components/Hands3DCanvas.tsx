@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RotateCcw, Hand } from 'lucide-react';
 import type { StepNumber, VisografemaItem } from '../data/elisMap';
+import { ARTICULATION_3D_MAP, type Articulation3DConfig } from '../data/articulation3DMap';
+import { createBodyContextProps } from './scene/BodyContextProps';
 import type { CompletedSign, SlotEntry } from './VisorArea';
 import { cn } from '../utils/cn';
 
@@ -448,7 +450,7 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
     thumbChar: string | null;
     fingersChar: string | null;
     palmChar: string | null;
-    articulationCategory: string | null;
+    articulationId: number | null;
     movementId: number | null;
     mirrorHands: boolean;
     isPlaying: boolean;
@@ -456,7 +458,7 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
     thumbChar: null,
     fingersChar: null,
     palmChar: null,
-    articulationCategory: null,
+    articulationId: null,
     movementId: null,
     mirrorHands: true,
     isPlaying: false,
@@ -466,7 +468,7 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
   const playingThumb = playingSign?.items.find((i) => i.step === 1)?.char ?? null;
   const playingFingers = playingSign?.items.find((i) => i.step === 2)?.char ?? null;
   const playingPalm = playingSign?.items.find((i) => i.step === 3)?.char ?? null;
-  const playingArticulation = playingSign?.items.find((i) => i.step === 4)?.category ?? null;
+  const playingArticulationId = playingSign?.items.find((i) => i.step === 4)?.id ?? null;
   const playingMovementId = playingSign?.items.find((i) => i.step === 5)?.id ?? null;
 
   const effectiveThumb = isPlaying && playingSign
@@ -487,11 +489,11 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
     ? hoveredItem.char
     : slots[3].item?.char ?? null;
 
-  const effectiveArticulation = isPlaying && playingSign
-    ? playingArticulation
+  const effectiveArticulationId = isPlaying && playingSign
+    ? playingArticulationId
     : hoveredItem?.step === 4
-    ? hoveredItem.category ?? null
-    : slots[4].item?.category ?? null;
+    ? hoveredItem.id
+    : slots[4].item?.id ?? null;
 
   const effectiveMovementId = isPlaying && playingSign
     ? playingMovementId
@@ -504,7 +506,7 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
       thumbChar: effectiveThumb,
       fingersChar: effectiveFingers,
       palmChar: effectivePalm,
-      articulationCategory: effectiveArticulation,
+      articulationId: effectiveArticulationId,
       movementId: effectiveMovementId,
       mirrorHands,
       isPlaying,
@@ -513,7 +515,7 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
     effectiveThumb,
     effectiveFingers,
     effectivePalm,
-    effectiveArticulation,
+    effectiveArticulationId,
     effectiveMovementId,
     mirrorHands,
     isPlaying,
@@ -668,6 +670,14 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
     scene.add(leftHand.root);
     scene.add(rightHand.root);
 
+    // Contextual 3D solid body props (Head, Torso, Arm, Leg + Hotspot Beacon)
+    const bodyProps = createBodyContextProps(skinMat, jointMat, cuffMat);
+    scene.add(bodyProps.root);
+
+    let activeCameraZScale = 1;
+    let targetCameraDist = computeIdealZ(initialAspect);
+    let smoothZoomActive = false;
+
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const w = Math.max(100, entry.contentRect.width);
@@ -675,9 +685,8 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
         const nextAspect = w / h;
         camera.aspect = nextAspect;
         camera.updateProjectionMatrix();
-        // Keep current viewing direction while ensuring both hands remain framed on aspect changes
         const dir = camera.position.clone().sub(controls.target).normalize();
-        const minFitDist = computeIdealZ(nextAspect);
+        const minFitDist = computeIdealZ(nextAspect) * activeCameraZScale;
         if (camera.position.distanceTo(controls.target) < minFitDist) {
           camera.position.copy(controls.target).addScaledVector(dir, minFitDist);
         }
@@ -690,27 +699,36 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
     let rafId = 0;
     const clock = new THREE.Clock();
 
+    const animatePropVisibility = (group: THREE.Group, active: boolean, speed: number) => {
+      const targetScale = active ? 1 : 0.001;
+      const nextScale = lerp(group.scale.x, targetScale, speed);
+      group.scale.setScalar(nextScale);
+      group.visible = nextScale > 0.025;
+    };
+
     const applyHandPose = (
       hand: HandRig,
       pose: HandPoseTargets,
       dt: number,
       elapsed: number,
-      articulationCategory: string | null,
+      artConfig: Articulation3DConfig | null,
       movementId: number | null,
       animateMovement: boolean,
       playingActive: boolean
     ) => {
       const speed = Math.min(1, dt * (playingActive ? 11 : 9));
 
-      // Spatial framing hint from Etapa 4 (Ponto de Articulação)
+      // Spatial target from Etapa 4 (Ponto de Articulação)
       let targetBaseX = hand.baseX;
-      let targetBaseY = -0.16;
-      if (articulationCategory === 'cabeca') {
-        targetBaseY = 0.08;
-      } else if (articulationCategory === 'membros') {
-        targetBaseY = -0.32;
-      } else if (articulationCategory === 'mao') {
-        targetBaseX = hand.baseX * 0.72;
+      let targetBaseY = -0.18;
+      let targetBaseZ = 0;
+
+      if (artConfig) {
+        if (hand.sideSign === 1) {
+          [targetBaseX, targetBaseY, targetBaseZ] = artConfig.rightHandPos;
+        } else if (artConfig.leftHandPos) {
+          [targetBaseX, targetBaseY, targetBaseZ] = artConfig.leftHandPos;
+        }
       }
 
       let offsetX = 0;
@@ -802,7 +820,7 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
 
       hand.root.position.x = lerp(hand.root.position.x, targetBaseX + offsetX, speed);
       hand.root.position.y = lerp(hand.root.position.y, targetBaseY + offsetY, speed);
-      hand.root.position.z = lerp(hand.root.position.z, offsetZ, speed);
+      hand.root.position.z = lerp(hand.root.position.z, targetBaseZ + offsetZ, speed);
 
       hand.wrist.rotation.x = lerp(hand.wrist.rotation.x, pose.wristRotX + extraWristX, speed);
       hand.wrist.rotation.y = lerp(hand.wrist.rotation.y, pose.wristRotY + extraWristY, speed);
@@ -834,6 +852,62 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
       const dt = Math.min(clock.getDelta(), 0.05);
       const elapsed = clock.elapsedTime;
       const state = poseStateRef.current;
+      const propSpeed = Math.min(1, dt * 10);
+
+      const artConfig = state.articulationId
+        ? ARTICULATION_3D_MAP[state.articulationId] ?? null
+        : null;
+
+      // Update contextual solid body modules (Head, Torso, Arm, Leg, Neutral Ring)
+      animatePropVisibility(bodyProps.head, artConfig?.propType === 'head', propSpeed);
+      animatePropVisibility(bodyProps.torso, artConfig?.propType === 'torso', propSpeed);
+      animatePropVisibility(
+        bodyProps.neutralSpaceRing,
+        Boolean(artConfig?.showNeutralSpaceRing),
+        propSpeed
+      );
+      animatePropVisibility(bodyProps.arm, artConfig?.propType === 'arm', propSpeed);
+      animatePropVisibility(bodyProps.leg, artConfig?.propType === 'leg', propSpeed);
+
+      if (bodyProps.neutralSpaceRing.visible) {
+        bodyProps.neutralSpaceRing.rotation.z = elapsed * 0.45;
+      }
+
+      // Update Hotspot Beacon at exact landmark
+      if (artConfig) {
+        bodyProps.beacon.visible = true;
+        const [bx, by, bz] = artConfig.hotspotPos;
+        bodyProps.beacon.position.x = lerp(bodyProps.beacon.position.x, bx, propSpeed);
+        bodyProps.beacon.position.y = lerp(bodyProps.beacon.position.y, by, propSpeed);
+        bodyProps.beacon.position.z = lerp(bodyProps.beacon.position.z, bz, propSpeed);
+        const pulse = (artConfig.beaconScale ?? 1) * (1 + Math.sin(elapsed * 5.2) * 0.14);
+        bodyProps.beacon.scale.setScalar(pulse);
+        bodyProps.beacon.lookAt(camera.position);
+        bodyProps.beaconRingMat.color.setHex(state.isPlaying ? 0x34d399 : 0x818cf8);
+        bodyProps.beaconCoreMat.color.setHex(state.isPlaying ? 0x6ee7b7 : 0xc7d2fe);
+      } else {
+        bodyProps.beacon.visible = false;
+      }
+
+      // Smooth camera auto-framing when contextual prop enters/leaves scene
+      const desiredScale = artConfig?.cameraZScale ?? 1;
+      if (Math.abs(desiredScale - activeCameraZScale) > 0.005) {
+        activeCameraZScale = desiredScale;
+        targetCameraDist = computeIdealZ(camera.aspect || 1) * activeCameraZScale;
+        smoothZoomActive = true;
+      }
+      if (smoothZoomActive) {
+        const offset = camera.position.clone().sub(controls.target);
+        const curDist = offset.length();
+        const nextDist = lerp(curDist, targetCameraDist, Math.min(1, dt * 6));
+        if (Math.abs(nextDist - targetCameraDist) < 0.02) {
+          offset.setLength(targetCameraDist);
+          smoothZoomActive = false;
+        } else {
+          offset.setLength(nextDist);
+        }
+        camera.position.copy(controls.target).add(offset);
+      }
 
       // Subtle emerald ring glow while playing
       baseRingMat.color.setHex(state.isPlaying ? 0x34d399 : 0x6366f1);
@@ -847,16 +921,24 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
         state.palmChar,
         1
       );
-      const leftPose = state.mirrorHands
-        ? getPoseFromElis(state.thumbChar, state.fingersChar, state.palmChar, -1)
-        : getPoseFromElis(null, null, null, -1);
+
+      // In Membros (#37–#44) and Mão (#45–#51), left hand acts automatically as the support/reference target
+      const useLeftAsSupport = Boolean(artConfig?.forceLeftSupport) || !state.mirrorHands;
+      const leftPose = useLeftAsSupport
+        ? getPoseFromElis(null, artConfig?.forceLeftSupport ? 'g' : null, null, -1)
+        : getPoseFromElis(state.thumbChar, state.fingersChar, state.palmChar, -1);
+
+      if (artConfig?.forceLeftSupport && artConfig.leftSupportRot) {
+        [leftPose.wristRotX, leftPose.wristRotY, leftPose.wristRotZ] =
+          artConfig.leftSupportRot;
+      }
 
       applyHandPose(
         rightHand,
         rightPose,
         dt,
         elapsed,
-        state.articulationCategory,
+        artConfig,
         state.movementId,
         true,
         state.isPlaying
@@ -866,9 +948,9 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
         leftPose,
         dt,
         elapsed,
-        state.mirrorHands ? state.articulationCategory : null,
+        artConfig,
         state.movementId,
-        state.mirrorHands,
+        !useLeftAsSupport,
         state.isPlaying
       );
 

@@ -22,6 +22,10 @@ Cada mão (`createArticulatedHand`) é montada como uma árvore hierárquica de 
   - Cada dedo possui 3 pivôs encadeados (`mcp` → `pip` → `dip`) com falanges em `CapsuleGeometry`, esferas articulares (eliminando frestas ao flexionar >90°) e unhas dorsais para facilitar a leitura visual de palma vs. dorso.
   - Controlados pela **Etapa 2 (Demais Dedos)**: fechado (`q`), muito curvo (`u`), curvo (`o`), inclinado (`s`) e estendido (`g`).
 
+- **Módulos Anatômicos Contextuais da Etapa 4 (Ponto de Articulação — [`BodyContextProps.ts`](./src/components/scene/BodyContextProps.ts) & [`articulation3DMap.ts`](./src/data/articulation3DMap.ts))**:
+  - Os **35 pontos de articulação (#17 a #51)** ativam sob demanda módulos 3D sólidos na mesma paleta das mãos: **Cabeça** (`#17–#31` com relevos de sobrancelhas, olhos, nariz, lábios, queixo e orelhas), **Tronco** (`#32–#36` com pescoço, ombros, tórax, abdômen e anel do espaço neutro `#33`), **Membros** (`#37–#43` braço de apoio acoplado à mão esquerda e `#44` perna) e interação **Mão-sobre-Mão** (`#45–#51`, onde a mão esquerda assume automaticamente o papel de apoio — girando inclusive para exibir o dorso em `#46`).
+  - Um **Hotspot Beacon** luminoso marca o ponto exato na anatomia enquanto a câmera recalibra suavemente o enquadramento (`cameraZScale`).
+
 ### 1.2 Renderização, Interação e Reprodução em Loop (`Enter`)
 - **Iluminação e Materiais**: Iluminação de estúdio em 3 pontos (`HemisphereLight`, `DirectionalLight` principal com sombras suaves, `rimLight` traseiro e `PointLight` de preenchimento) com `MeshStandardMaterial` e *tone mapping* `ACESFilmic`.
 - **Interatividade 360°**: `OrbitControls` com amortecimento (*damping*) para girar as duas mãos livremente via toque ou mouse, botão de centralização da câmera e alternância entre **2 Mãos (Espelhadas)** e **1 Mão Dominante + Mão de Apoio**.
