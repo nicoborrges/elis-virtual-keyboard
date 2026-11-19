@@ -145,7 +145,7 @@ export const VisorArea: React.FC<VisorAreaProps> = ({
                     type="button"
                     onClick={() => onPlayFromSign(sign.id)}
                     className={cn(
-                      'group relative inline-flex items-center px-2 py-0.5 mr-1.5 rounded-xl border text-[34px] leading-none font-elis tracking-wider animate-word-pop transition-all duration-200',
+                      'group relative inline-flex items-center px-2 pt-2 pb-1 mr-1.5 rounded-xl border text-[32px] leading-none font-elis tracking-wider animate-word-pop transition-all duration-200',
                       isCurrentlyPlaying
                         ? 'bg-emerald-500/20 border-emerald-400 text-white shadow-[0_0_14px_-2px_rgba(52,211,153,0.6)] scale-[1.04]'
                         : 'bg-indigo-950/35 border-indigo-500/25 hover:border-indigo-400/60 text-slate-100'
@@ -169,7 +169,7 @@ export const VisorArea: React.FC<VisorAreaProps> = ({
               {activeSignChars.length > 0 && (
                 <span
                   className={cn(
-                    'inline-flex items-center px-2 py-0.5 rounded-xl border text-[34px] leading-none font-elis tracking-wider transition-all duration-200',
+                    'inline-flex items-center px-2 pt-2 pb-1 rounded-xl border text-[32px] leading-none font-elis tracking-wider transition-all duration-200',
                     isPlaying && playingSign?.id === '__active__'
                       ? 'bg-emerald-500/20 border-emerald-400 text-white shadow-[0_0_14px_-2px_rgba(52,211,153,0.6)]'
                       : 'bg-amber-500/10 border-amber-400/35 text-amber-200'

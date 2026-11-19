@@ -196,7 +196,7 @@ function getPoseFromElis(
   return pose;
 }
 
-function createPalmGeometry(sideSign: 1 | -1): THREE.ExtrudeGeometry {
+function createPalmGeometry(): THREE.ExtrudeGeometry {
   const shape = new THREE.Shape();
   shape.moveTo(-0.34, -0.46);
   shape.quadraticCurveTo(-0.46, -0.1, -0.45, 0.34);
@@ -216,9 +216,6 @@ function createPalmGeometry(sideSign: 1 | -1): THREE.ExtrudeGeometry {
   });
 
   geom.translate(0, 0, -0.08);
-  if (sideSign === -1) {
-    geom.scale(-1, 1, 1);
-  }
   geom.computeVertexNormals();
   return geom;
 }
@@ -256,7 +253,7 @@ function createArticulatedHand(
   cuffRing.position.set(0, -0.55, -0.01);
   wrist.add(cuffRing);
 
-  const palmMesh = new THREE.Mesh(createPalmGeometry(sideSign), skinMat);
+  const palmMesh = new THREE.Mesh(createPalmGeometry(), skinMat);
   palmMesh.castShadow = true;
   palmMesh.receiveShadow = true;
   wrist.add(palmMesh);
@@ -916,7 +913,7 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
             <span>
               Tocando {playingIndex + 1}/{totalPlayingSigns}
             </span>
-            <span className="font-elis text-sm leading-none text-white ml-0.5">
+            <span className="font-elis text-sm leading-none translate-y-[2px] text-white ml-0.5">
               {playingSign.chars}
             </span>
           </>
