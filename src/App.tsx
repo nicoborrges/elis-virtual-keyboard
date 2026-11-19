@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { BookOpen, Keyboard, Wifi, BatteryCharging } from 'lucide-react';
 import {
@@ -31,7 +31,97 @@ export function App() {
   const [lastHoveredLabel, setLastHoveredLabel] = useState<string | null>(null);
   const [isRefOpen, setIsRefOpen] = useState(false);
 
+  // Continuous loop playback state (Enter button / key)
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackIndex, setPlaybackIndex] = useState(0);
+
   const consolidateTimeoutRef = useRef<number | null>(null);
+
+  // Build ordered list of playable signs (completed non-space signs + active partial sign if present)
+  const playableSigns = useMemo<CompletedSign[]>(() => {
+    const list = completedSigns.filter((s) => !s.isSpace && s.items.length > 0);
+    const activeItems = ([1, 2, 3, 4, 5] as StepNumber[])
+      .map((s) => slots[s].item)
+      .filter((it): it is VisografemaItem => it !== null);
+
+    if (activeItems.length > 0) {
+      list.push({
+        id: '__active__',
+        chars: activeItems.map((i) => i.char).join(''),
+        items: activeItems,
+      });
+    }
+    return list;
+  }, [completedSigns, slots]);
+
+  const safePlayingIndex =
+    playableSigns.length > 0 ? playbackIndex % playableSigns.length : 0;
+
+  const playingSign =
+    isPlaying && playableSigns.length > 0
+      ? playableSigns[safePlayingIndex]
+      : null;
+
+  // Continuous loop timer when playback is active
+  useEffect(() => {
+    if (!isPlaying || playableSigns.length <= 1) return;
+
+    const timer = window.setInterval(() => {
+      setPlaybackIndex((prev) => (prev + 1) % playableSigns.length);
+    }, 1900);
+
+    return () => window.clearInterval(timer);
+  }, [isPlaying, playableSigns.length]);
+
+  const handleTogglePlay = useCallback(() => {
+    if (playableSigns.length === 0) return;
+    setIsPlaying((prev) => {
+      if (!prev) {
+        setPlaybackIndex(0);
+        return true;
+      }
+      return false;
+    });
+  }, [playableSigns.length]);
+
+  const handlePlayFromSign = useCallback(
+    (signId: string) => {
+      const idx = playableSigns.findIndex((s) => s.id === signId);
+      if (idx >= 0) {
+        setPlaybackIndex(idx);
+        setIsPlaying(true);
+      }
+    },
+    [playableSigns]
+  );
+
+  // Keyboard shortcut: Enter toggles loop playback; Escape stops playback or closes modal
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isRefOpen) {
+          setIsRefOpen(false);
+        } else if (isPlaying) {
+          setIsPlaying(false);
+        }
+        return;
+      }
+
+      if (e.key === 'Enter' && !isRefOpen) {
+        const tag = (e.target as HTMLElement | null)?.tagName;
+        if (tag === 'BUTTON' || tag === 'INPUT' || tag === 'TEXTAREA') {
+          return;
+        }
+        if (playableSigns.length > 0) {
+          e.preventDefault();
+          handleTogglePlay();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isRefOpen, isPlaying, playableSigns.length, handleTogglePlay]);
 
   const handleHoverItem = useCallback(
     (item: VisografemaItem | null, customLabel?: string) => {
@@ -90,6 +180,7 @@ export function App() {
         consolidateTimeoutRef.current = null;
       }
 
+      setIsPlaying(false);
       const now = Date.now();
       const updatedSlots: Record<StepNumber, SlotEntry> = {
         ...slots,
@@ -112,6 +203,7 @@ export function App() {
   );
 
   const handleShortcutAllClosedFingers = useCallback(() => {
+    setIsPlaying(false);
     const thumbClosed = ELIS_VISOGRAFEMAS.find(
       (v) => v.step === 1 && v.char === 'q'
     )!;
@@ -160,6 +252,7 @@ export function App() {
   }, [completedSigns, slots]);
 
   const handleSpace = useCallback(() => {
+    setIsPlaying(false);
     const activeItems = ([1, 2, 3, 4, 5] as StepNumber[])
       .map((s) => slots[s].item)
       .filter((it): it is VisografemaItem => it !== null);
@@ -186,6 +279,7 @@ export function App() {
   }, [slots, completedSigns, consolidateSign]);
 
   const handleBackspace = useCallback(() => {
+    setIsPlaying(false);
     const filledSteps = ([5, 4, 3, 2, 1] as StepNumber[]).filter(
       (s) => slots[s].item !== null
     );
@@ -226,6 +320,8 @@ export function App() {
       window.clearTimeout(consolidateTimeoutRef.current);
       consolidateTimeoutRef.current = null;
     }
+    setIsPlaying(false);
+    setPlaybackIndex(0);
     setSlots(createEmptySlots());
     setCompletedSigns([]);
     setActiveStep(1);
@@ -281,7 +377,16 @@ export function App() {
           copied={copied}
           hoveredItem={hoveredItem}
           lastHoveredLabel={lastHoveredLabel}
-          onSelectSlot={(step) => setActiveStep(step)}
+          isPlaying={isPlaying}
+          playingSign={playingSign}
+          playingIndex={safePlayingIndex}
+          totalPlayingSigns={playableSigns.length}
+          onSelectSlot={(step) => {
+            setIsPlaying(false);
+            setActiveStep(step);
+          }}
+          onTogglePlay={handleTogglePlay}
+          onPlayFromSign={handlePlayFromSign}
           onCopy={handleCopy}
           onSpace={handleSpace}
           onBackspace={handleBackspace}

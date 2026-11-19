@@ -3,12 +3,16 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RotateCcw, Hand, Sparkles } from 'lucide-react';
 import type { StepNumber, VisografemaItem } from '../data/elisMap';
-import type { SlotEntry } from './VisorArea';
+import type { CompletedSign, SlotEntry } from './VisorArea';
 import { cn } from '../utils/cn';
 
 interface Hands3DCanvasProps {
   slots: Record<StepNumber, SlotEntry>;
   hoveredItem: VisografemaItem | null;
+  isPlaying: boolean;
+  playingSign: CompletedSign | null;
+  playingIndex: number;
+  totalPlayingSigns: number;
 }
 
 interface FingerRig {
@@ -34,17 +38,14 @@ interface HandRig {
 }
 
 interface HandPoseTargets {
-  // Wrist orientation (radians)
   wristRotX: number;
   wristRotY: number;
   wristRotZ: number;
-  // Thumb joints
   thumbCmcX: number;
   thumbCmcY: number;
   thumbCmcZ: number;
   thumbMcpX: number;
   thumbIpX: number;
-  // Four fingers flexion (radians around X, curling toward +Z palm)
   fingerMcpX: number;
   fingerPipX: number;
   fingerDipX: number;
@@ -57,7 +58,6 @@ function getPoseFromElis(
   palmChar: string | null,
   sideSign: 1 | -1
 ): HandPoseTargets {
-  // Base relaxed studio pose
   const pose: HandPoseTargets = {
     wristRotX: 0.08,
     wristRotY: -sideSign * 0.14,
@@ -198,7 +198,6 @@ function getPoseFromElis(
 
 function createPalmGeometry(sideSign: 1 | -1): THREE.ExtrudeGeometry {
   const shape = new THREE.Shape();
-  // Organic tapered palm contour (wider at knuckles, narrower at wrist)
   shape.moveTo(-0.34, -0.46);
   shape.quadraticCurveTo(-0.46, -0.1, -0.45, 0.34);
   shape.quadraticCurveTo(-0.44, 0.48, -0.26, 0.5);
@@ -216,7 +215,6 @@ function createPalmGeometry(sideSign: 1 | -1): THREE.ExtrudeGeometry {
     curveSegments: 16,
   });
 
-  // Center along Z and mirror if needed
   geom.translate(0, 0, -0.08);
   if (sideSign === -1) {
     geom.scale(-1, 1, 1);
@@ -240,7 +238,6 @@ function createArticulatedHand(
   const wrist = new THREE.Group();
   root.add(wrist);
 
-  // Forearm / Wrist stub
   const wristMesh = new THREE.Mesh(
     new THREE.CylinderGeometry(0.31, 0.34, 0.68, 24),
     cuffMat
@@ -250,7 +247,6 @@ function createArticulatedHand(
   wristMesh.castShadow = true;
   wrist.add(wristMesh);
 
-  // Subtle glowing accent ring around wrist cuff
   const cuffRing = new THREE.Mesh(
     new THREE.TorusGeometry(0.33, 0.026, 12, 32),
     accentMat
@@ -260,13 +256,11 @@ function createArticulatedHand(
   cuffRing.position.set(0, -0.55, -0.01);
   wrist.add(cuffRing);
 
-  // Palm sculpted mesh
   const palmMesh = new THREE.Mesh(createPalmGeometry(sideSign), skinMat);
   palmMesh.castShadow = true;
   palmMesh.receiveShadow = true;
   wrist.add(palmMesh);
 
-  // Soft thenar pad (thumb muscle cushion on palm side +Z)
   const thenarPad = new THREE.Mesh(
     new THREE.SphereGeometry(0.24, 18, 16),
     skinMat
@@ -275,7 +269,6 @@ function createArticulatedHand(
   thenarPad.scale.set(0.95, 1.35, 0.65);
   wrist.add(thenarPad);
 
-  // Subtle palmar crease / pad contrast on +Z so palm vs dorsum is crystal clear
   const palmCenterPad = new THREE.Mesh(
     new THREE.SphereGeometry(0.22, 16, 14),
     jointMat
@@ -284,8 +277,6 @@ function createArticulatedHand(
   palmCenterPad.scale.set(1.3, 1.1, 0.35);
   wrist.add(palmCenterPad);
 
-  // 4 Articulated Fingers: [Index, Middle, Ring, Pinky]
-  // Note: when palm faces +Z, right hand (+1) has thumb on +X and pinky on -X
   const fingerSpecs = [
     { name: 'index', x: sideSign * 0.33, y: 0.51, len: [0.42, 0.28, 0.22], rad: 0.096, splay: -sideSign * 0.11 },
     { name: 'middle', x: sideSign * 0.11, y: 0.54, len: [0.46, 0.31, 0.23], rad: 0.1, splay: -sideSign * 0.02 },
@@ -299,14 +290,12 @@ function createArticulatedHand(
     mcp.rotation.z = spec.splay;
     wrist.add(mcp);
 
-    // MCP Knuckle sphere
     const knuckle = new THREE.Mesh(
       new THREE.SphereGeometry(spec.rad * 1.06, 16, 14),
       jointMat
     );
     mcp.add(knuckle);
 
-    // Proximal phalanx
     const [l1, l2, l3] = spec.len;
     const proxMesh = new THREE.Mesh(
       new THREE.CapsuleGeometry(spec.rad * 0.94, l1 - spec.rad * 1.4, 8, 16),
@@ -316,7 +305,6 @@ function createArticulatedHand(
     proxMesh.castShadow = true;
     mcp.add(proxMesh);
 
-    // PIP Joint
     const pip = new THREE.Group();
     pip.position.y = l1;
     mcp.add(pip);
@@ -327,7 +315,6 @@ function createArticulatedHand(
     );
     pip.add(pipJoint);
 
-    // Intermediate phalanx
     const midMesh = new THREE.Mesh(
       new THREE.CapsuleGeometry(spec.rad * 0.86, Math.max(0.05, l2 - spec.rad * 1.2), 8, 16),
       skinMat
@@ -336,7 +323,6 @@ function createArticulatedHand(
     midMesh.castShadow = true;
     pip.add(midMesh);
 
-    // DIP Joint
     const dip = new THREE.Group();
     dip.position.y = l2;
     pip.add(dip);
@@ -347,7 +333,6 @@ function createArticulatedHand(
     );
     dip.add(dipJoint);
 
-    // Distal phalanx
     const distMesh = new THREE.Mesh(
       new THREE.CapsuleGeometry(spec.rad * 0.78, Math.max(0.04, l3 - spec.rad * 1.1), 8, 16),
       skinMat
@@ -356,7 +341,6 @@ function createArticulatedHand(
     distMesh.castShadow = true;
     dip.add(distMesh);
 
-    // Subtle fingernail on dorsal side (-Z)
     const nail = new THREE.Mesh(
       new THREE.BoxGeometry(spec.rad * 1.05, l3 * 0.56, 0.025),
       nailMat
@@ -445,51 +429,89 @@ function createArticulatedHand(
 export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
   slots,
   hoveredItem,
+  isPlaying,
+  playingSign,
+  playingIndex,
+  totalPlayingSigns,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const [mirrorHands, setMirrorHands] = useState(true);
 
-  // Store latest reactive pose parameters in a ref so the animation loop reads them smoothly without recreating the WebGL context
   const poseStateRef = useRef<{
     thumbChar: string | null;
     fingersChar: string | null;
     palmChar: string | null;
+    articulationCategory: string | null;
     movementId: number | null;
     mirrorHands: boolean;
+    isPlaying: boolean;
   }>({
     thumbChar: null,
     fingersChar: null,
     palmChar: null,
+    articulationCategory: null,
     movementId: null,
     mirrorHands: true,
+    isPlaying: false,
   });
 
-  // Update ref whenever slots, hoveredItem, or mirrorHands change
-  const effectiveThumb =
-    hoveredItem?.step === 1 ? hoveredItem.char : slots[1].item?.char ?? null;
-  const effectiveFingers =
-    hoveredItem?.step === 2 ? hoveredItem.char : slots[2].item?.char ?? null;
-  const effectivePalm =
-    hoveredItem?.step === 3 ? hoveredItem.char : slots[3].item?.char ?? null;
-  const effectiveMovementId =
-    hoveredItem?.step === 5 ? hoveredItem.id : slots[5].item?.id ?? null;
+  // Resolve active pose source: Loop playback overrides editing/hover state while playing
+  const playingThumb = playingSign?.items.find((i) => i.step === 1)?.char ?? null;
+  const playingFingers = playingSign?.items.find((i) => i.step === 2)?.char ?? null;
+  const playingPalm = playingSign?.items.find((i) => i.step === 3)?.char ?? null;
+  const playingArticulation = playingSign?.items.find((i) => i.step === 4)?.category ?? null;
+  const playingMovementId = playingSign?.items.find((i) => i.step === 5)?.id ?? null;
+
+  const effectiveThumb = isPlaying && playingSign
+    ? playingThumb
+    : hoveredItem?.step === 1
+    ? hoveredItem.char
+    : slots[1].item?.char ?? null;
+
+  const effectiveFingers = isPlaying && playingSign
+    ? playingFingers
+    : hoveredItem?.step === 2
+    ? hoveredItem.char
+    : slots[2].item?.char ?? null;
+
+  const effectivePalm = isPlaying && playingSign
+    ? playingPalm
+    : hoveredItem?.step === 3
+    ? hoveredItem.char
+    : slots[3].item?.char ?? null;
+
+  const effectiveArticulation = isPlaying && playingSign
+    ? playingArticulation
+    : hoveredItem?.step === 4
+    ? hoveredItem.category ?? null
+    : slots[4].item?.category ?? null;
+
+  const effectiveMovementId = isPlaying && playingSign
+    ? playingMovementId
+    : hoveredItem?.step === 5
+    ? hoveredItem.id
+    : slots[5].item?.id ?? null;
 
   useEffect(() => {
     poseStateRef.current = {
       thumbChar: effectiveThumb,
       fingersChar: effectiveFingers,
       palmChar: effectivePalm,
+      articulationCategory: effectiveArticulation,
       movementId: effectiveMovementId,
       mirrorHands,
+      isPlaying,
     };
   }, [
     effectiveThumb,
     effectiveFingers,
     effectivePalm,
+    effectiveArticulation,
     effectiveMovementId,
     mirrorHands,
+    isPlaying,
   ]);
 
   useEffect(() => {
@@ -568,20 +590,20 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
     baseDisc.receiveShadow = true;
     scene.add(baseDisc);
 
+    const baseRingMat = new THREE.MeshBasicMaterial({
+      color: 0x6366f1,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.35,
+    });
     const baseRing = new THREE.Mesh(
       new THREE.RingGeometry(2.5, 2.56, 64),
-      new THREE.MeshBasicMaterial({
-        color: 0x6366f1,
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.35,
-      })
+      baseRingMat
     );
     baseRing.rotation.x = -Math.PI / 2;
     baseRing.position.set(0, -1.33, 0);
     scene.add(baseRing);
 
-    // Sculptural mannequin materials
     const skinMat = new THREE.MeshStandardMaterial({
       color: 0xeac7b2,
       roughness: 0.44,
@@ -617,7 +639,6 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
       metalness: 0.6,
     });
 
-    // Create Both 3D Articulated Hands
     const leftHand = createArticulatedHand(
       -1,
       skinMat,
@@ -638,7 +659,6 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
     scene.add(leftHand.root);
     scene.add(rightHand.root);
 
-    // Handle responsive resizing
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const w = Math.max(100, entry.contentRect.width);
@@ -659,66 +679,117 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
       pose: HandPoseTargets,
       dt: number,
       elapsed: number,
+      articulationCategory: string | null,
       movementId: number | null,
-      animateMovement: boolean
+      animateMovement: boolean,
+      playingActive: boolean
     ) => {
-      const speed = Math.min(1, dt * 10);
+      const speed = Math.min(1, dt * (playingActive ? 11 : 9));
 
-      // Compute subtle motion offset based on ELiS Movement visografema
-      let offsetX = 0;
-      let offsetY = Math.sin(elapsed * 1.8 + (hand.sideSign > 0 ? 0 : 0.7)) * 0.04;
-      let offsetZ = 0;
-      let extraWristX = 0;
-      let extraWristZ = 0;
-      let fingerPulse = 0;
-
-      if (animateMovement && movementId !== null) {
-        const wave = Math.sin(elapsed * 4.2);
-        const cosWave = Math.cos(elapsed * 4.2);
-
-        if (movementId === 52) offsetZ = Math.max(0, wave) * 0.35; // para frente
-        else if (movementId === 53) offsetZ = -Math.max(0, wave) * 0.35; // para trás
-        else if (movementId === 54) offsetZ = wave * 0.32; // frente e trás
-        else if (movementId === 55) offsetY = Math.max(0, wave) * 0.34; // para cima
-        else if (movementId === 56) offsetY = -Math.max(0, wave) * 0.34; // para baixo
-        else if (movementId === 57) offsetY = wave * 0.32; // cima e baixo
-        else if (movementId === 58) offsetX = Math.max(0, wave) * 0.34; // direita
-        else if (movementId === 59) offsetX = -Math.max(0, wave) * 0.34; // esquerda
-        else if (movementId === 60) offsetX = wave * 0.32; // direita e esquerda
-        else if (movementId === 61) offsetX = -hand.sideSign * Math.max(0, wave) * 0.3; // para o meio
-        else if (movementId === 62) offsetX = hand.sideSign * Math.max(0, wave) * 0.3; // para fora
-        else if (movementId === 67) {
-          // arco
-          offsetX = wave * 0.25;
-          offsetY = Math.abs(cosWave) * 0.28;
-        } else if (movementId === 69) {
-          // circular vertical
-          offsetY = wave * 0.24;
-          offsetZ = cosWave * 0.24;
-        } else if (movementId === 70) {
-          // circular horizontal
-          offsetX = wave * 0.24;
-          offsetZ = cosWave * 0.24;
-        } else if (movementId === 71) {
-          // circular frontal
-          offsetX = wave * 0.24;
-          offsetY = cosWave * 0.24;
-        } else if (movementId >= 72 && movementId <= 77) {
-          // abrir/fechar/flexionar dedos
-          fingerPulse = (wave + 1) * 0.42;
-        } else if (movementId >= 80 && movementId <= 83) {
-          // dobrar/girar punho
-          extraWristX = movementId === 80 ? wave * 0.45 : 0;
-          extraWristZ = movementId >= 81 ? wave * 0.45 : 0;
-        }
+      // Spatial framing hint from Etapa 4 (Ponto de Articulação)
+      let targetBaseX = hand.baseX;
+      let targetBaseY = -0.16;
+      if (articulationCategory === 'cabeca') {
+        targetBaseY = 0.08;
+      } else if (articulationCategory === 'membros') {
+        targetBaseY = -0.32;
+      } else if (articulationCategory === 'mao') {
+        targetBaseX = hand.baseX * 0.72;
       }
 
-      hand.root.position.x = lerp(hand.root.position.x, hand.baseX + offsetX, speed);
-      hand.root.position.y = lerp(hand.root.position.y, -0.18 + offsetY, speed);
+      let offsetX = 0;
+      let offsetY = Math.sin(elapsed * 1.8 + (hand.sideSign > 0 ? 0 : 0.7)) * 0.035;
+      let offsetZ = 0;
+      let extraWristX = 0;
+      let extraWristY = 0;
+      let extraWristZ = 0;
+      let fingerPulse = 0;
+      let drumWave = false;
+
+      if (animateMovement && movementId !== null) {
+        const freq = playingActive ? 4.8 : 4.2;
+        const wave = Math.sin(elapsed * freq);
+        const cosWave = Math.cos(elapsed * freq);
+
+        if (movementId === 52) offsetZ = Math.max(0, wave) * 0.38; // para frente
+        else if (movementId === 53) offsetZ = -Math.max(0, wave) * 0.38; // para trás
+        else if (movementId === 54) offsetZ = wave * 0.35; // frente e trás
+        else if (movementId === 55) offsetY = Math.max(0, wave) * 0.36; // para cima
+        else if (movementId === 56) offsetY = -Math.max(0, wave) * 0.36; // para baixo
+        else if (movementId === 57) offsetY = wave * 0.34; // cima e baixo
+        else if (movementId === 58) offsetX = Math.max(0, wave) * 0.35; // direita
+        else if (movementId === 59) offsetX = -Math.max(0, wave) * 0.35; // esquerda
+        else if (movementId === 60) offsetX = wave * 0.34; // direita e esquerda
+        else if (movementId === 61) offsetX = -hand.sideSign * Math.max(0, wave) * 0.32; // para o meio
+        else if (movementId === 62) offsetX = hand.sideSign * Math.max(0, wave) * 0.32; // para fora
+        else if (movementId === 63) {
+          // cima e direita
+          offsetX = Math.max(0, wave) * 0.28;
+          offsetY = Math.max(0, wave) * 0.28;
+        } else if (movementId === 64) {
+          // cima e esquerda
+          offsetX = -Math.max(0, wave) * 0.28;
+          offsetY = Math.max(0, wave) * 0.28;
+        } else if (movementId === 65) {
+          // baixo e direita
+          offsetX = Math.max(0, wave) * 0.28;
+          offsetY = -Math.max(0, wave) * 0.28;
+        } else if (movementId === 66) {
+          // baixo e esquerda
+          offsetX = -Math.max(0, wave) * 0.28;
+          offsetY = -Math.max(0, wave) * 0.28;
+        } else if (movementId === 67) {
+          // arco
+          offsetX = wave * 0.26;
+          offsetY = Math.abs(cosWave) * 0.3;
+        } else if (movementId === 68) {
+          // flexão/extensão do braço
+          offsetY = wave * 0.2;
+          offsetZ = wave * 0.22;
+          extraWristX = -wave * 0.25;
+        } else if (movementId === 69) {
+          // circular vertical
+          offsetY = wave * 0.26;
+          offsetZ = cosWave * 0.26;
+        } else if (movementId === 70) {
+          // circular horizontal
+          offsetX = wave * 0.26;
+          offsetZ = cosWave * 0.26;
+        } else if (movementId === 71) {
+          // circular frontal
+          offsetX = wave * 0.26;
+          offsetY = cosWave * 0.26;
+        } else if (movementId >= 72 && movementId <= 77) {
+          // abrir/fechar/flexionar/unir dedos
+          fingerPulse = (wave + 1) * 0.45;
+        } else if (movementId === 78 || movementId === 79) {
+          // tamborilar / friccionar dedos
+          drumWave = true;
+        } else if (movementId === 80) {
+          // dobrar o punho
+          extraWristX = wave * 0.5;
+        } else if (movementId === 81) {
+          // mover o punho lateralmente
+          extraWristZ = wave * 0.48;
+        } else if (movementId === 82 || movementId === 83) {
+          // girar punho / antebraço
+          extraWristY = wave * 0.65;
+        } else if (movementId >= 84) {
+          // movimentos sem as mãos (pulso rítmico suave para indicar execução)
+          offsetY = wave * 0.1;
+          extraWristZ = wave * 0.12;
+        }
+      } else if (playingActive && animateMovement) {
+        // Gentle emphasis motion when playing a sign without Step 5 movement
+        offsetZ = Math.sin(elapsed * 3.4) * 0.12;
+      }
+
+      hand.root.position.x = lerp(hand.root.position.x, targetBaseX + offsetX, speed);
+      hand.root.position.y = lerp(hand.root.position.y, targetBaseY + offsetY, speed);
       hand.root.position.z = lerp(hand.root.position.z, offsetZ, speed);
 
       hand.wrist.rotation.x = lerp(hand.wrist.rotation.x, pose.wristRotX + extraWristX, speed);
-      hand.wrist.rotation.y = lerp(hand.wrist.rotation.y, pose.wristRotY, speed);
+      hand.wrist.rotation.y = lerp(hand.wrist.rotation.y, pose.wristRotY + extraWristY, speed);
       hand.wrist.rotation.z = lerp(hand.wrist.rotation.z, pose.wristRotZ + extraWristZ, speed);
 
       // Thumb joints
@@ -731,10 +802,13 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
       // Four fingers
       hand.fingers.forEach((f, idx) => {
         const stagger = idx * 0.03;
-        f.mcp.rotation.x = lerp(f.mcp.rotation.x, pose.fingerMcpX + fingerPulse + stagger, speed);
+        const perFingerPulse = drumWave
+          ? (Math.sin(elapsed * 8.5 + idx * 1.15) + 1) * 0.35
+          : fingerPulse;
+        f.mcp.rotation.x = lerp(f.mcp.rotation.x, pose.fingerMcpX + perFingerPulse + stagger, speed);
         f.mcp.rotation.z = lerp(f.mcp.rotation.z, f.baseSplayZ * pose.fingerSplayScale, speed);
-        f.pip.rotation.x = lerp(f.pip.rotation.x, pose.fingerPipX + fingerPulse * 1.1, speed);
-        f.dip.rotation.x = lerp(f.dip.rotation.x, pose.fingerDipX + fingerPulse * 0.8, speed);
+        f.pip.rotation.x = lerp(f.pip.rotation.x, pose.fingerPipX + perFingerPulse * 1.1, speed);
+        f.dip.rotation.x = lerp(f.dip.rotation.x, pose.fingerDipX + perFingerPulse * 0.8, speed);
       });
     };
 
@@ -743,6 +817,12 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
       const dt = Math.min(clock.getDelta(), 0.05);
       const elapsed = clock.elapsedTime;
       const state = poseStateRef.current;
+
+      // Subtle emerald ring glow while playing
+      baseRingMat.color.setHex(state.isPlaying ? 0x34d399 : 0x6366f1);
+      baseRingMat.opacity = state.isPlaying
+        ? 0.45 + Math.sin(elapsed * 5) * 0.15
+        : 0.35;
 
       const rightPose = getPoseFromElis(
         state.thumbChar,
@@ -754,14 +834,25 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
         ? getPoseFromElis(state.thumbChar, state.fingersChar, state.palmChar, -1)
         : getPoseFromElis(null, null, null, -1);
 
-      applyHandPose(rightHand, rightPose, dt, elapsed, state.movementId, true);
+      applyHandPose(
+        rightHand,
+        rightPose,
+        dt,
+        elapsed,
+        state.articulationCategory,
+        state.movementId,
+        true,
+        state.isPlaying
+      );
       applyHandPose(
         leftHand,
         leftPose,
         dt,
         elapsed,
+        state.mirrorHands ? state.articulationCategory : null,
         state.movementId,
-        state.mirrorHands
+        state.mirrorHands,
+        state.isPlaying
       );
 
       controls.update();
@@ -797,7 +888,12 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
   };
 
   return (
-    <div className="relative flex-1 min-h-[168px] w-full rounded-2xl bg-[radial-gradient(ellipse_at_center,_rgba(49,46,129,0.28)_0%,_rgba(2,6,23,0.96)_72%)] border border-slate-800/90 overflow-hidden shadow-inner">
+    <div
+      className={cn(
+        'relative flex-1 min-h-[168px] w-full rounded-2xl bg-[radial-gradient(ellipse_at_center,_rgba(49,46,129,0.28)_0%,_rgba(2,6,23,0.96)_72%)] border overflow-hidden shadow-inner transition-colors duration-300',
+        isPlaying ? 'border-emerald-500/60 shadow-[0_0_20px_-6px_rgba(52,211,153,0.45)]' : 'border-slate-800/90'
+      )}
+    >
       {/* Three.js WebGL Mount */}
       <div
         ref={containerRef}
@@ -805,10 +901,31 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
         aria-label="Modelo 3D interativo de duas mãos articuladas para visualização ELiS"
       />
 
-      {/* Top-Left Badge */}
-      <div className="pointer-events-none absolute top-2 left-2.5 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-950/75 backdrop-blur-sm border border-slate-800/80 text-[10px] font-medium text-slate-300">
-        <Sparkles className="w-2.5 h-2.5 text-indigo-400" />
-        <span>Mãos 3D • {mirrorHands ? 'Espelhadas' : 'Dominante + Apoio'}</span>
+      {/* Top-Left Status Badge */}
+      <div
+        className={cn(
+          'pointer-events-none absolute top-2 left-2.5 flex items-center gap-1.5 px-2.5 py-0.5 rounded-full backdrop-blur-sm border text-[10px] font-medium transition-colors',
+          isPlaying && playingSign
+            ? 'bg-emerald-950/85 border-emerald-400/50 text-emerald-200'
+            : 'bg-slate-950/75 border-slate-800/80 text-slate-300'
+        )}
+      >
+        {isPlaying && playingSign ? (
+          <>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+            <span>
+              Tocando {playingIndex + 1}/{totalPlayingSigns}
+            </span>
+            <span className="font-elis text-sm leading-none text-white ml-0.5">
+              {playingSign.chars}
+            </span>
+          </>
+        ) : (
+          <>
+            <Sparkles className="w-2.5 h-2.5 text-indigo-400" />
+            <span>Mãos 3D • {mirrorHands ? 'Espelhadas' : 'Dominante + Apoio'}</span>
+          </>
+        )}
       </div>
 
       {/* Top-Right Quick Controls */}
@@ -849,7 +966,9 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
           <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
           Esq.
         </span>
-        <span className="text-slate-500">Arraste para rotacionar 360°</span>
+        <span className="text-slate-500">
+          {isPlaying ? 'Loop contínuo ativo (Enter para parar)' : 'Arraste para rotacionar 360°'}
+        </span>
         <span className="flex items-center gap-1">
           Dir.
           <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />

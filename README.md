@@ -5,10 +5,15 @@ Aplicação web interativa **mobile-first** que funciona como um **Teclado Selet
 ## Arquitetura e Funcionalidades
 
 - **Emulação Mobile Vertical (`aspect-[9/19.5]` / `max-w-md`)**:
-  - **Área Superior (Visor da Palavra & 5 Slots Interativos)**:
-    - Visor dinâmico renderizado com a fonte `ELiS` (`38px`) exibindo os sinais consolidados e o sinal em construção.
+  - **Área Superior (Visor ELiS, Modelo 3D das Duas Mãos & 5 Slots Interativos)**:
+    - Palco 3D interativo em Three.js com duas mãos articuladas (espelhadas ou dominante + apoio), rotação 360° e resposta em tempo real aos visografemas selecionados.
+    - Visor dinâmico renderizado com a fonte `ELiS` exibindo os sinais consolidados e o sinal em construção.
     - Barra de progresso com os **5 Slots canônicos** (`1. Polegar`, `2. Demais Dedos`, `3. Orientação`, `4. Articulação`, `5. Movimento`) com animação de subida suave (`translate-y` + `fade-in`) e edição direta ao clicar em qualquer slot.
-    - Barra de ferramentas: **Copiar Palavra** (clipboard), **Espaço** (delimitador de sinais), **Backspace** (apagar último visografema ou reabrir último sinal) e **Limpar Tudo**.
+    - Barra de ferramentas: **Enter (Tocar/Parar em loop o sinal escrito no modelo 3D)**, **Copiar Palavra** (clipboard), **Espaço** (delimitador de sinais), **Backspace** (apagar último visografema ou reabrir último sinal) e **Limpar Tudo**.
+
+## Documentação Técnica do Modelo 3D
+
+Consulte [`NOTAS_MODELO_3D.md`](./NOTAS_MODELO_3D.md) para detalhes sobre a abordagem procedural em Three.js implementada atualmente e alternativas para evoluir o realismo visual no futuro (malhas `.glb` rigadas do Blender, avatar com IK/blendshapes e captura via MediaPipe Hands).
   - **Área Inferior (Caixa Seletora Modular / Teclado Virtual)**:
     - Botões exibem exclusivamente os glifos visuais na fonte `ELiS-Beta.otf`, com suporte a leitores de tela (`sr-only`) e tooltip sutil.
     - **Etapa 1 (Polegar)**: 6 visografemas + atalho rápido para *Todos os dedos iguais/fechado* (`qq`).
