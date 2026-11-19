@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { RotateCcw, Hand, Sparkles } from 'lucide-react';
+import { RotateCcw, Hand } from 'lucide-react';
 import type { StepNumber, VisografemaItem } from '../data/elisMap';
 import type { CompletedSign, SlotEntry } from './VisorArea';
 import { cn } from '../utils/cn';
@@ -885,12 +885,7 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
   };
 
   return (
-    <div
-      className={cn(
-        'relative flex-1 min-h-[168px] w-full rounded-2xl bg-[radial-gradient(ellipse_at_center,_rgba(49,46,129,0.28)_0%,_rgba(2,6,23,0.96)_72%)] border overflow-hidden shadow-inner transition-colors duration-300',
-        isPlaying ? 'border-emerald-500/60 shadow-[0_0_20px_-6px_rgba(52,211,153,0.45)]' : 'border-slate-800/90'
-      )}
-    >
+    <div className="relative flex-1 min-h-[190px] w-full overflow-hidden">
       {/* Three.js WebGL Mount */}
       <div
         ref={containerRef}
@@ -898,52 +893,36 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
         aria-label="Modelo 3D interativo de duas mãos articuladas para visualização ELiS"
       />
 
-      {/* Top-Left Status Badge */}
-      <div
-        className={cn(
-          'pointer-events-none absolute top-2 left-2.5 flex items-center gap-1.5 px-2.5 py-0.5 rounded-full backdrop-blur-sm border text-[10px] font-medium transition-colors',
-          isPlaying && playingSign
-            ? 'bg-emerald-950/85 border-emerald-400/50 text-emerald-200'
-            : 'bg-slate-950/75 border-slate-800/80 text-slate-300'
-        )}
-      >
-        {isPlaying && playingSign ? (
-          <>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-            <span>
-              Tocando {playingIndex + 1}/{totalPlayingSigns}
-            </span>
-            <span className="font-elis text-sm leading-none translate-y-[2px] text-white ml-0.5">
-              {playingSign.chars}
-            </span>
-          </>
-        ) : (
-          <>
-            <Sparkles className="w-2.5 h-2.5 text-indigo-400" />
-            <span>Mãos 3D • {mirrorHands ? 'Espelhadas' : 'Dominante + Apoio'}</span>
-          </>
-        )}
-      </div>
+      {/* Minimal Live Playback Pill (only shown while playing) */}
+      {isPlaying && playingSign && (
+        <div className="pointer-events-none absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950/80 backdrop-blur-md border border-emerald-400/40 text-[11px] font-medium text-emerald-200">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+          <span>
+            Tocando {playingIndex + 1}/{totalPlayingSigns}
+          </span>
+        </div>
+      )}
 
-      {/* Top-Right Quick Controls */}
-      <div className="absolute top-2 right-2 flex items-center gap-1">
+      {/* Quiet Floating Controls (Top-Right) */}
+      <div className="absolute top-3 right-3 flex items-center gap-1.5">
         <button
           type="button"
           onClick={() => setMirrorHands((prev) => !prev)}
           title={
             mirrorHands
-              ? 'Alternar para Mão Dominante + Mão de Apoio'
-              : 'Espelhar sinal nas duas mãos'
+              ? 'Modo atual: 2 mãos espelhadas (clique para 1 mão + apoio)'
+              : 'Modo atual: 1 mão + apoio (clique para espelhar 2 mãos)'
           }
+          aria-label={mirrorHands ? 'Alternar para 1 mão + apoio' : 'Alternar para 2 mãos espelhadas'}
           className={cn(
-            'flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold border backdrop-blur-sm transition-colors',
+            'flex items-center gap-1 px-2 py-1.5 rounded-xl text-[10px] font-medium backdrop-blur-md border transition-colors',
             mirrorHands
-              ? 'bg-indigo-600/30 border-indigo-400/50 text-indigo-200 hover:bg-indigo-600/40'
-              : 'bg-slate-900/80 border-slate-700/80 text-slate-300 hover:bg-slate-800'
+              ? 'bg-slate-900/60 border-slate-700/60 text-slate-200 hover:bg-slate-800/80'
+              : 'bg-slate-900/40 border-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800/70'
           )}
         >
-          <Hand className="w-3 h-3" />
-          <span>{mirrorHands ? '2 Mãos' : '1+Apoio'}</span>
+          <Hand className="w-3.5 h-3.5" />
+          <span>{mirrorHands ? '2' : '1'}</span>
         </button>
 
         <button
@@ -951,25 +930,10 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
           onClick={handleResetCamera}
           title="Centralizar câmera 3D"
           aria-label="Centralizar câmera 3D"
-          className="p-1 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-slate-300 backdrop-blur-sm transition-colors"
+          className="p-1.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-700/60 text-slate-300 backdrop-blur-md transition-colors"
         >
-          <RotateCcw className="w-3 h-3" />
+          <RotateCcw className="w-3.5 h-3.5" />
         </button>
-      </div>
-
-      {/* Bottom Subtle Legend & Interaction Hint */}
-      <div className="pointer-events-none absolute bottom-1.5 inset-x-2.5 flex items-center justify-between text-[9px] text-slate-400/90">
-        <span className="flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
-          Esq.
-        </span>
-        <span className="text-slate-500">
-          {isPlaying ? 'Loop contínuo ativo (Enter para parar)' : 'Arraste para rotacionar 360°'}
-        </span>
-        <span className="flex items-center gap-1">
-          Dir.
-          <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-        </span>
       </div>
     </div>
   );

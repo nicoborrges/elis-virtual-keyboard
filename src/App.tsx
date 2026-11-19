@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { BookOpen, Keyboard, Wifi, BatteryCharging } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import {
   ELIS_VISOGRAFEMAS,
   type StepNumber,
@@ -37,7 +37,6 @@ export function App() {
 
   const consolidateTimeoutRef = useRef<number | null>(null);
 
-  // Build ordered list of playable signs (completed non-space signs + active partial sign if present)
   const playableSigns = useMemo<CompletedSign[]>(() => {
     const list = completedSigns.filter((s) => !s.isSpace && s.items.length > 0);
     const activeItems = ([1, 2, 3, 4, 5] as StepNumber[])
@@ -54,6 +53,8 @@ export function App() {
     return list;
   }, [completedSigns, slots]);
 
+  const hasAnyContent = playableSigns.length > 0 || completedSigns.length > 0;
+
   const safePlayingIndex =
     playableSigns.length > 0 ? playbackIndex % playableSigns.length : 0;
 
@@ -62,7 +63,6 @@ export function App() {
       ? playableSigns[safePlayingIndex]
       : null;
 
-  // Continuous loop timer when playback is active
   useEffect(() => {
     if (!isPlaying || playableSigns.length <= 1) return;
 
@@ -95,7 +95,6 @@ export function App() {
     [playableSigns]
   );
 
-  // Keyboard shortcut: Enter toggles loop playback; Escape stops playback or closes modal
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -129,7 +128,7 @@ export function App() {
       if (customLabel) {
         setLastHoveredLabel(customLabel);
       } else if (item) {
-        setLastHoveredLabel(`#${item.id} — ${item.label}`);
+        setLastHoveredLabel(item.label);
       } else {
         setLastHoveredLabel(null);
       }
@@ -140,9 +139,9 @@ export function App() {
   const triggerSubtleConfetti = useCallback(() => {
     try {
       confetti({
-        particleCount: 28,
-        spread: 55,
-        origin: { y: 0.35 },
+        particleCount: 24,
+        spread: 50,
+        origin: { y: 0.38 },
         disableForReducedMotion: true,
       });
     } catch {
@@ -330,50 +329,33 @@ export function App() {
   return (
     <div className="min-h-[100dvh] w-full bg-gradient-to-b from-slate-900 via-slate-950 to-black flex items-center justify-center sm:p-4 md:p-6">
       {/* Smartphone Vertical Viewport Container (aspect-[9/19.5] / max-w-md) */}
-      <main className="relative w-full max-w-md h-[100dvh] sm:h-[min(92dvh,860px)] sm:aspect-[9/19.5] flex flex-col bg-slate-950 sm:rounded-[42px] sm:border-[6px] sm:border-slate-800/90 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.85),0_0_40px_-10px_rgba(99,102,241,0.2)] overflow-hidden">
-        {/* Compact Smartphone Status Bar & App Header */}
-        <header className="flex flex-col bg-slate-900/95 border-b border-slate-800/80 px-3.5 pt-1.5 pb-1.5 select-none shrink-0">
-          <div className="flex items-center justify-between text-[9px] font-medium text-slate-400 mb-1">
-            <span>ELiS OS</span>
-            <div className="hidden sm:block w-16 h-3 rounded-full bg-slate-950 border border-slate-800/80" />
-            <div className="flex items-center gap-1.5">
-              <Wifi className="w-2.5 h-2.5 text-slate-400" />
-              <BatteryCharging className="w-3 h-3 text-emerald-400" />
-            </div>
+      <main className="relative w-full max-w-md h-[100dvh] sm:h-[min(92dvh,860px)] sm:aspect-[9/19.5] flex flex-col bg-slate-950 sm:rounded-[40px] sm:border-[6px] sm:border-slate-800/90 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.85),0_0_40px_-10px_rgba(99,102,241,0.18)] overflow-hidden">
+        {/* Minimalist Top Bar (Block 1) */}
+        <header className="flex items-center justify-between px-4 h-12 bg-slate-950/90 border-b border-slate-900 select-none shrink-0">
+          <div className="flex items-baseline gap-2">
+            <h1 className="text-sm font-bold tracking-tight text-slate-100">
+              ELiS
+            </h1>
+            <span className="text-[11px] font-medium text-slate-500">
+              Teclado Visual
+            </span>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-indigo-600/20 border border-indigo-500/40 text-indigo-400">
-                <Keyboard className="w-3.5 h-3.5" />
-              </div>
-              <div>
-                <h1 className="text-[11px] font-bold tracking-wide text-slate-100 leading-tight">
-                  Teclado Seletor ELiS
-                </h1>
-                <p className="text-[9px] text-slate-400 leading-tight">
-                  Escrita das Línguas de Sinais
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setIsRefOpen(true)}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-800/90 hover:bg-slate-800 border border-slate-700/70 text-[10px] font-medium text-indigo-300 transition-colors"
-              title="Consultar tabela completa de 95 visografemas (ELiS Decodificada)"
-            >
-              <BookOpen className="w-3 h-3" />
-              <span>Tabela ELiS</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setIsRefOpen(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[11px] font-medium text-slate-300 transition-colors"
+            title="Consultar tabela completa de 95 visografemas"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Tabela</span>
+          </button>
         </header>
 
-        {/* Section 1: Expanded Upper Area (3D Two-Hands Model + Word Visor + 5 Slots + Toolbar) */}
+        {/* Unified Upper Area: 3D Two-Hands + Integrated ELiS Visor (Block 2) */}
         <VisorArea
           completedSigns={completedSigns}
           slots={slots}
-          activeStep={activeStep}
           copied={copied}
           hoveredItem={hoveredItem}
           lastHoveredLabel={lastHoveredLabel}
@@ -381,34 +363,30 @@ export function App() {
           playingSign={playingSign}
           playingIndex={safePlayingIndex}
           totalPlayingSigns={playableSigns.length}
-          onSelectSlot={(step) => {
-            setIsPlaying(false);
-            setActiveStep(step);
-          }}
-          onTogglePlay={handleTogglePlay}
           onPlayFromSign={handlePlayFromSign}
           onCopy={handleCopy}
-          onSpace={handleSpace}
-          onBackspace={handleBackspace}
           onClearAll={handleClearAll}
         />
 
-        {/* Section 2: Compact Lower Area (Modular Visografema Selector / Virtual Keyboard) */}
+        {/* Compact Native-Style Keyboard Drawer with Unified Stepper & Control Row (Block 3) */}
         <SelectorKeyboard
+          slots={slots}
           activeStep={activeStep}
-          selectedItemForActiveStep={slots[activeStep].item}
+          hasAnyContent={hasAnyContent}
+          isPlaying={isPlaying}
           onSelectVisografema={handleSelectVisografema}
           onShortcutAllClosedFingers={handleShortcutAllClosedFingers}
-          onChangeStep={(step) => setActiveStep(step)}
+          onChangeStep={(step) => {
+            setIsPlaying(false);
+            setActiveStep(step);
+          }}
           onHoverItem={handleHoverItem}
+          onSpace={handleSpace}
+          onBackspace={handleBackspace}
+          onTogglePlay={handleTogglePlay}
         />
 
-        {/* Bottom Home Indicator Pill */}
-        <div className="bg-slate-900/95 py-1 flex justify-center shrink-0">
-          <div className="w-24 h-1 rounded-full bg-slate-700/70" />
-        </div>
-
-        {/* Optional Reference Sheet Drawer */}
+        {/* Reference Sheet Modal */}
         <ReferenceModal
           isOpen={isRefOpen}
           onClose={() => setIsRefOpen(false)}

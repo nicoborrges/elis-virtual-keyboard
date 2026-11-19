@@ -1,31 +1,44 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Zap } from 'lucide-react';
+import { CornerDownLeft, Delete, Space, Square, Zap } from 'lucide-react';
 import {
   ELIS_STEPS,
   getVisografemasByStep,
   type StepNumber,
   type VisografemaItem,
 } from '../data/elisMap';
+import type { SlotEntry } from './VisorArea';
 import { cn } from '../utils/cn';
 
 interface SelectorKeyboardProps {
+  slots: Record<StepNumber, SlotEntry>;
   activeStep: StepNumber;
-  selectedItemForActiveStep: VisografemaItem | null;
+  hasAnyContent: boolean;
+  isPlaying: boolean;
   onSelectVisografema: (item: VisografemaItem) => void;
   onShortcutAllClosedFingers: () => void;
   onChangeStep: (step: StepNumber) => void;
   onHoverItem: (item: VisografemaItem | null, customLabel?: string) => void;
+  onSpace: () => void;
+  onBackspace: () => void;
+  onTogglePlay: () => void;
 }
 
 export const SelectorKeyboard: React.FC<SelectorKeyboardProps> = ({
+  slots,
   activeStep,
-  selectedItemForActiveStep,
+  hasAnyContent,
+  isPlaying,
   onSelectVisografema,
   onShortcutAllClosedFingers,
   onChangeStep,
   onHoverItem,
+  onSpace,
+  onBackspace,
+  onTogglePlay,
 }) => {
   const currentStepDef = ELIS_STEPS.find((s) => s.step === activeStep)!;
+  const selectedItemForActiveStep = slots[activeStep].item;
+
   const [categoryOverrides, setCategoryOverrides] = useState<
     Partial<Record<StepNumber, string>>
   >({});
@@ -60,85 +73,90 @@ export const SelectorKeyboard: React.FC<SelectorKeyboardProps> = ({
 
   return (
     <section
-      aria-label="Caixa Seletora Modular de Visografemas"
-      className="shrink-0 max-h-[248px] flex flex-col bg-slate-900/95 rounded-t-3xl border-t border-slate-800/90 shadow-[0_-10px_28px_rgba(0,0,0,0.45)] overflow-hidden"
+      aria-label="Teclado Seletor Modular de Visografemas"
+      className="shrink-0 flex flex-col bg-slate-900/95 rounded-t-[28px] border-t border-slate-800/80 shadow-[0_-12px_32px_rgba(0,0,0,0.5)] overflow-hidden"
     >
-      {/* Compact Header & Stepper */}
-      <div className="flex flex-col gap-1.5 px-3 pt-2 pb-1.5 bg-slate-900/90 border-b border-slate-800/80">
-        <div className="w-8 h-0.5 rounded-full bg-slate-700/80 mx-auto" />
+      {/* 1. Single Unified Stepper (5 Slim Interactive Slot Pills — zero duplication) */}
+      <div className="px-3 pt-2.5 pb-2 border-b border-slate-800/60">
+        <div
+          role="tablist"
+          aria-label="Etapas e slots dos 5 visografemas do sinal"
+          className="grid grid-cols-5 gap-1.5"
+        >
+          {ELIS_STEPS.map((stepDef) => {
+            const slotEntry = slots[stepDef.step];
+            const isActive = activeStep === stepDef.step;
+            const isFilled = slotEntry.item !== null;
 
-        {/* Single-row Compact Stepper + Prev/Next */}
-        <div className="flex items-center justify-between gap-1.5">
-          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
-            {ELIS_STEPS.map((step) => {
-              const isCurrent = step.step === activeStep;
-              const isPast = step.step < activeStep;
-              return (
-                <button
-                  key={step.step}
-                  type="button"
-                  onClick={() => onChangeStep(step.step)}
-                  className={cn(
-                    'flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-semibold whitespace-nowrap transition-all',
-                    isCurrent
-                      ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/30'
-                      : isPast
-                      ? 'bg-slate-800/90 text-emerald-300 hover:bg-slate-800'
-                      : 'bg-slate-800/40 text-slate-400 hover:bg-slate-800/70 hover:text-slate-300'
-                  )}
-                >
-                  <span>{step.step}.</span>
-                  <span>{step.shortTitle}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="flex items-center gap-0.5 shrink-0">
-            <button
-              type="button"
-              onClick={() =>
-                activeStep > 1 && onChangeStep((activeStep - 1) as StepNumber)
-              }
-              disabled={activeStep === 1}
-              aria-label="Etapa anterior"
-              title="Voltar para etapa anterior"
-              className="p-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30 disabled:pointer-events-none transition-colors"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                activeStep < 5 && onChangeStep((activeStep + 1) as StepNumber)
-              }
-              disabled={activeStep === 5}
-              aria-label="Próxima etapa"
-              title="Avançar para próxima etapa"
-              className="p-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30 disabled:pointer-events-none transition-colors"
-            >
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
+            return (
+              <button
+                key={stepDef.step}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                aria-label={`Etapa ${stepDef.step}: ${stepDef.shortTitle}${
+                  slotEntry.item ? ` (${slotEntry.item.label})` : ''
+                }`}
+                title={`${stepDef.fullTitle}${
+                  slotEntry.item ? ` — ${slotEntry.item.label}` : ''
+                }`}
+                onClick={() => onChangeStep(stepDef.step)}
+                className={cn(
+                  'relative flex items-center justify-center gap-1 h-10 rounded-xl border px-1.5 transition-all duration-200 select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400',
+                  isActive
+                    ? 'bg-indigo-600/20 border-indigo-400/80 text-white shadow-[0_0_14px_-4px_rgba(99,102,241,0.55)]'
+                    : isFilled
+                    ? 'bg-slate-950/70 border-slate-700/80 text-slate-100 hover:border-slate-600'
+                    : 'bg-slate-950/35 border-slate-800/60 text-slate-500 hover:text-slate-300 hover:border-slate-700/80'
+                )}
+              >
+                {slotEntry.item ? (
+                  <>
+                    <span
+                      key={slotEntry.updatedAt}
+                      className="font-elis text-[24px] leading-none translate-y-[2px] text-white animate-slot-rise"
+                    >
+                      {slotEntry.item.char}
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        'absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full',
+                        isActive ? 'bg-indigo-400' : 'bg-emerald-400/80'
+                      )}
+                    />
+                  </>
+                ) : (
+                  <div className="flex items-center gap-1 min-w-0">
+                    <span
+                      className={cn(
+                        'text-[10px] font-bold leading-none',
+                        isActive ? 'text-indigo-300' : 'text-slate-600'
+                      )}
+                    >
+                      {stepDef.step}
+                    </span>
+                    <span
+                      className={cn(
+                        'text-[10.5px] font-medium truncate',
+                        isActive ? 'text-indigo-100' : 'text-slate-400'
+                      )}
+                    >
+                      {stepDef.shortTitle}
+                    </span>
+                  </div>
+                )}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Compact Active Step Title + Category Sub-Tabs */}
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-[11px] font-bold text-slate-200 truncate">
-            {currentStepDef.fullTitle}
-          </h2>
-          <span className="text-[10px] text-slate-400 truncate">
-            {currentStepDef.categories
-              ? `${items.length} itens`
-              : currentStepDef.description}
-          </span>
-        </div>
-
+        {/* Category Sub-Tabs ONLY for Steps 4 & 5 (clean, no noisy counts) */}
         {currentStepDef.categories && (
           <div
             role="tablist"
             aria-label={`Subcategorias de ${currentStepDef.shortTitle}`}
-            className="grid grid-flow-col auto-cols-fr gap-1 p-0.5 rounded-lg bg-slate-950/80 border border-slate-800/80"
+            className="grid grid-flow-col auto-cols-fr gap-1 p-0.5 rounded-xl bg-slate-950/70 border border-slate-800/60 mt-2"
           >
             {currentStepDef.categories.map((cat) => {
               const isCatActive = activeCategory === cat.id;
@@ -150,23 +168,13 @@ export const SelectorKeyboard: React.FC<SelectorKeyboardProps> = ({
                   aria-selected={isCatActive}
                   onClick={() => handleSelectCategory(cat.id)}
                   className={cn(
-                    'flex items-center justify-center gap-1 py-1 px-1.5 rounded-md text-[10px] font-semibold transition-all truncate',
+                    'py-1 px-1.5 rounded-lg text-[11px] font-medium transition-all truncate',
                     isCatActive
-                      ? 'bg-indigo-600/90 text-white shadow'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                      ? 'bg-slate-800 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
                   )}
                 >
-                  <span className="truncate">{cat.label}</span>
-                  <span
-                    className={cn(
-                      'text-[8.5px] px-1 rounded-full',
-                      isCatActive
-                        ? 'bg-indigo-800/80 text-indigo-100'
-                        : 'bg-slate-800 text-slate-400'
-                    )}
-                  >
-                    {cat.count}
-                  </span>
+                  {cat.label}
                 </button>
               );
             })}
@@ -174,8 +182,8 @@ export const SelectorKeyboard: React.FC<SelectorKeyboardProps> = ({
         )}
       </div>
 
-      {/* Compact Modular Visografema Keys Grid */}
-      <div className="overflow-y-auto px-3 py-2 max-h-[146px]">
+      {/* 2. Modular Visografema Keys Grid */}
+      <div className="overflow-y-auto px-3 pt-2.5 pb-2 max-h-[152px]">
         <div className={cn('grid', gridColsClass)}>
           {items.map((item) => {
             const isSelected =
@@ -197,8 +205,8 @@ export const SelectorKeyboard: React.FC<SelectorKeyboardProps> = ({
                   'group relative flex items-center justify-center rounded-xl border transition-all duration-150 select-none active:scale-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400',
                   activeStep <= 3 ? 'h-12' : 'h-11',
                   isSelected
-                    ? 'bg-indigo-600/30 border-indigo-400 text-white shadow-[0_0_16px_-4px_rgba(99,102,241,0.5)]'
-                    : 'bg-slate-950/85 hover:bg-slate-800/90 border-slate-800/90 hover:border-indigo-500/50 text-slate-100 shadow-sm'
+                    ? 'bg-indigo-600/25 border-indigo-400 text-white shadow-[0_0_14px_-4px_rgba(99,102,241,0.5)]'
+                    : 'bg-slate-950/75 hover:bg-slate-800/80 border-slate-800/80 hover:border-slate-700 text-slate-100'
                 )}
               >
                 <span
@@ -215,46 +223,90 @@ export const SelectorKeyboard: React.FC<SelectorKeyboardProps> = ({
               </button>
             );
           })}
-
-          {/* Compact Step 1 Special Shortcut: Todos os dedos iguais/fechado (qq) */}
-          {activeStep === 1 && (
-            <button
-              type="button"
-              onClick={onShortcutAllClosedFingers}
-              onMouseEnter={() =>
-                onHoverItem(
-                  null,
-                  'Atalho: Todos os dedos iguais / fechado (Etapas 1 e 2)'
-                )
-              }
-              onMouseLeave={() => onHoverItem(null)}
-              onFocus={() =>
-                onHoverItem(
-                  null,
-                  'Atalho: Todos os dedos iguais / fechado (Etapas 1 e 2)'
-                )
-              }
-              onBlur={() => onHoverItem(null)}
-              title="Atalho: Todos os dedos iguais / fechado (preenche Polegar e Demais Dedos)"
-              aria-label="Atalho: Todos os dedos iguais ou fechado"
-              className="col-span-6 group relative flex items-center justify-center gap-2.5 h-10 rounded-xl bg-gradient-to-r from-indigo-950/60 via-indigo-900/40 to-indigo-950/60 hover:from-indigo-900/70 hover:to-indigo-900/70 border border-indigo-500/40 hover:border-indigo-400 text-indigo-100 transition-all duration-150 active:scale-95 shadow-sm"
-            >
-              <Zap
-                aria-hidden="true"
-                className="w-3.5 h-3.5 text-amber-400 shrink-0 transition-transform group-hover:scale-110"
-              />
-              <span
-                aria-hidden="true"
-                className="font-elis text-[28px] leading-none tracking-widest text-white"
-              >
-                qq
-              </span>
-              <span className="sr-only">
-                Atalho: Todos os dedos iguais ou fechado (preenche Polegar e Demais Dedos e avança para Orientação da Palma)
-              </span>
-            </button>
-          )}
         </div>
+      </div>
+
+      {/* 3. Native Mobile Keyboard Control Row (Shortcut/Space, Backspace, Primary Enter/Play) */}
+      <div className="flex items-center gap-1.5 px-3 pt-1 pb-2.5">
+        {activeStep === 1 && (
+          <button
+            type="button"
+            onClick={onShortcutAllClosedFingers}
+            onMouseEnter={() =>
+              onHoverItem(null, 'Atalho: Todos os dedos fechados')
+            }
+            onMouseLeave={() => onHoverItem(null)}
+            onFocus={() =>
+              onHoverItem(null, 'Atalho: Todos os dedos fechados')
+            }
+            onBlur={() => onHoverItem(null)}
+            title="Atalho: Todos os dedos iguais / fechado"
+            aria-label="Atalho: Todos os dedos fechados"
+            className="flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/70 text-slate-200 transition-all active:scale-95 shrink-0"
+          >
+            <Zap aria-hidden="true" className="w-3.5 h-3.5 text-amber-400" />
+            <span
+              aria-hidden="true"
+              className="font-elis text-[24px] leading-none translate-y-[1px] tracking-widest text-white"
+            >
+              qq
+            </span>
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={onSpace}
+          disabled={!hasAnyContent}
+          title="Inserir espaço / próximo sinal"
+          aria-label="Espaço"
+          className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl bg-slate-800/70 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-medium transition-all active:scale-[0.98] disabled:opacity-35 disabled:pointer-events-none"
+        >
+          <Space className="w-3.5 h-3.5 text-slate-400" />
+          <span>Espaço</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={onBackspace}
+          disabled={!hasAnyContent}
+          title="Apagar último visografema"
+          aria-label="Apagar"
+          className="flex items-center justify-center w-12 h-10 rounded-xl bg-slate-800/70 hover:bg-slate-800 border border-slate-800 text-slate-300 transition-all active:scale-90 disabled:opacity-35 disabled:pointer-events-none shrink-0"
+        >
+          <Delete className="w-4 h-4" />
+        </button>
+
+        {/* Single Primary Accent Key: Enter (Play / Stop Loop) */}
+        <button
+          type="button"
+          onClick={onTogglePlay}
+          disabled={!hasAnyContent}
+          aria-pressed={isPlaying}
+          title={
+            isPlaying
+              ? 'Parar reprodução em loop (Enter ou Esc)'
+              : 'Enter: Reproduzir sinal escrito em loop nas mãos 3D'
+          }
+          className={cn(
+            'flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-semibold border transition-all active:scale-95 disabled:opacity-35 disabled:pointer-events-none shrink-0',
+            isPlaying
+              ? 'bg-emerald-500 hover:bg-emerald-400 border-emerald-400 text-slate-950 shadow-[0_0_16px_-3px_rgba(52,211,153,0.6)]'
+              : 'bg-indigo-600 hover:bg-indigo-500 border-indigo-500 text-white shadow-sm shadow-indigo-500/30'
+          )}
+        >
+          {isPlaying ? (
+            <>
+              <Square className="w-3.5 h-3.5 fill-slate-950" />
+              <span>Parar</span>
+            </>
+          ) : (
+            <>
+              <CornerDownLeft className="w-3.5 h-3.5" />
+              <span>Tocar</span>
+            </>
+          )}
+        </button>
       </div>
     </section>
   );
