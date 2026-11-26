@@ -41,7 +41,7 @@ O teclado é um **módulo à parte** (adaptador de entrada). O protótipo atual 
 
 ### Narrativa (deck de jul/2026)
 
-- **Prólogo — O Silêncio e a Fagulha:** o protagonista (a **figura encapuzada** das artes) desperta sem memória no cume de uma montanha em ruínas; o mundo é cinza, estático, sem som nem vento (árvore seca, rio congelado, porta de pedra). Uma **fagulha dourada** (espírito-guia não verbal; **é a forma inicial das mãos do teclado**, que evoluem a partir dela — ver §4) flutua até uma raiz morta e **performa um sinal em Libras** em loop. O jogador só observa; a raiz se rompe e nasce uma flor — a primeira cor. Regra do mundo ensinada por observação, sem tutorial.
+- **Prólogo — O Silêncio e a Fagulha:** o protagonista (a **figura encapuzada** das artes) desperta sem memória no cume de uma montanha em ruínas; o mundo é cinza, estático, sem som nem vento (árvore seca, rio congelado, porta de pedra). Uma **fagulha dourada** (espírito-guia não verbal; **as mãos 3D do teclado atual são o protótipo dela** — ver §4) flutua até uma raiz morta e **performa um sinal em Libras** em loop. O jogador só observa; a raiz se rompe e nasce uma flor — a primeira cor. Regra do mundo ensinada por observação, sem tutorial.
 - **Jornada em duas frentes:**
   - *Libertação* — descer a montanha e libertar regiões oprimidas; cada feitiço em ELiS revela o ecossistema original (mármore → rio corrente, forjas reacesas) e conta por que o império caiu.
   - *Identidade* — o protagonista hesita, aprende e falha; com a fluência em ELiS/Libras ele lembra quem é, os gestos ficam firmes e a magia mais intensa.
@@ -70,8 +70,9 @@ O teclado é um **módulo à parte** (adaptador de entrada). O protótipo atual 
 - **Progressão de conteúdo:** começar pelos sinais mais fáceis de ensinar e evoluir. O teclado ganhará dinamismo (mais visografemas por grupo, sinais compostos etc.) **conforme a necessidade** — não generalizar antes da hora.
 - **Grimório:** sim — um sinal entra na **primeira conjuração** bem-sucedida.
 - **Pista visual:** depende do puzzle (sem formato único).
-- **Quem performa o sinal na tela:** as **mãos 3D do painel do teclado** (como no protótipo). **A fagulha do prólogo é a evolução dessas mãos** — o mesmo elemento, ligado ao arco de Identidade.
-- **No jogo, o teclado abre a partir de um botão** como **painel lateral**: **não cobre a cena e não pausa o jogo** — a cena fica visível para o jogador ver o efeito do sinal.
+- **Quem performa o sinal na tela:** as **mãos 3D do painel do teclado** (como no protótipo). **Essas mãos são o protótipo da fagulha**: no jogo final, quem performa os sinais é a fagulha (forma final do que hoje são as mãos procedurais).
+- **No jogo, o teclado abre a partir de um botão** como **painel lateral**: **não cobre a cena e não pausa o jogo** — a cena fica visível para o jogador ver o efeito do sinal. **Nada acontece no mundo enquanto o jogador escreve** (sem inimigos/eventos durante a escrita). Design do painel (lado, tamanho) ainda não definido.
+- **O protagonista não reage à conjuração** na cena; quem reage/comunica é o **avatar comunicador**.
 - **Teclado = módulo à parte.** Muito provavelmente haverá uma **Câmara de Testes**: modo livre onde o jogador pratica ELiS e as mãos 3D animam **qualquer combinação** escrita (como hoje).
 - **Combate:** pode haver; a lógica de gameplay é passo futuro.
 - **Pilar "sem texto"**: meta do **jogo final**. No **protótipo atual o texto explicativo fica** (rótulos das etapas, Espaço, Tocar, Tabela, dicas). Não remover textos da UI sem pedido.
@@ -143,8 +144,8 @@ Referência: artes conceituais dos decks (logo dourado, figura encapuzada com m�
 - Pendências do [plano de ética/LGPD](docs/plano-etica-lgpd.md) §7: nº e local dos testes, login × código de sessão, dados de grupo, gravação de tela.
 - Hospedagem UFG: contato e plano B (a conversar).
 
-**6ª rodada (2026-11-26)**
-- *Evolução fagulha → mãos:* visualmente, as mãos começam como fagulha de luz e ganham forma (dedos, pele, firmeza) conforme o jogador progride? A evolução é atrelada a capítulos, ao nº de sinais no grimório ou à precisão?
-- *Painel lateral:* de que lado da tela, e ocupa quanto (1/3?)? Dá para trocar de lado (canhotos)? O que acontece com a cena quando o painel abre (câmera desloca para manter o alvo visível?)
-- *Escrever com o painel aberto:* o jogador escreve e conjura com o mundo rodando — inimigos ou eventos podem acontecer enquanto isso?
-- *Protagonista × mãos:* quando as mãos do painel conjuram, o protagonista na cena reage (gesto, brilho) para ligar as duas coisas?
+**7ª rodada (2026-11-26)**
+- *Avatar comunicador:* quem é — um NPC na cena que conversa em Libras? Como ele sinaliza (mãos 3D próprias, a mesma tecnologia da fagulha)? Ele é a fonte principal das pistas visuais?
+- *Fagulha no jogo final:* ela vive dentro do painel do teclado ou flutua na cena até o alvo (como no prólogo)?
+- *Design do painel lateral:* lado, tamanho, troca para canhotos — ainda indefinido.
+- *Testes:* nº de participantes, local, login × código de sessão, gravação de tela — ainda indefinido.
