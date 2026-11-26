@@ -26,18 +26,20 @@ Pelo cronograma do pitch, os **testes iniciais são em mar–abr/2027**. A trami
 ## 3. Enquadramento ético (a confirmar com o CEP)
 
 - **Normas prováveis:** Resolução CNS **510/2016** (pesquisa em Ciências Humanas e Sociais, adequada a testes de uso e observação com risco mínimo) e, no que couber, Resolução CNS **466/2012**.
-- **Pesquisador responsável:** normalmente um **docente** (orientador/a). Os alunos entram como equipe de pesquisa.
-- **Riscos (mínimos) a declarar:** cansaço e frustração com os puzzles, constrangimento ao errar, exposição de imagem (se houver gravação) e vazamento de dados.
-- **Mitigações:** pausas livres, direito de parar a qualquer momento sem prejuízo, sessão sem avaliação "certo/errado" da pessoa, dados pseudonimizados, gravação só com autorização à parte.
+- **Pesquisador responsável:** **Nicolas Josep Silveira Borges** (decidido). ⚠️ Muitos CEPs exigem que pesquisas de graduação tenham um **docente** como responsável, com o aluno na equipe. Confirmar com o CEP/UFG logo no primeiro contato. Se não for aceito, o orientador assume e o Nicolas fica como pesquisador assistente.
+- **Público:** **somente adultos (18+)**. Não haverá menores.
+- **Sessões não filmadas.** O registro será feito por notas do observador e pela telemetria do jogo.
+- **Riscos (mínimos) a declarar:** cansaço e frustração com os puzzles, constrangimento ao errar e vazamento de dados.
+- **Mitigações:** pausas livres, direito de parar a qualquer momento sem prejuízo, sessão sem avaliação "certo/errado" da pessoa, dados pseudonimizados.
 - **Benefícios:** contato com ELiS/Libras e contribuição para material acessível.
 
 ## 4. Documentos para a submissão
 
 - [ ] **Projeto de pesquisa** detalhado: objetivos, hipóteses, método, público, critérios de inclusão e exclusão, análise de dados
 - [ ] **TCLE**: termo de consentimento **bilíngue**, em português escrito **e vídeo em Libras** (gravado pela monitora da Letras ou intérprete). A Res. 510/2016 admite registrar o consentimento em formatos além do escrito; confirmar com o CEP
-- [ ] **TALE + TCLE dos responsáveis**, **se houver participantes menores de 18 anos** (decidir: incluir menores ou não?)
-- [ ] **Termo de autorização de uso de imagem/vídeo**, se as sessões forem filmadas (separado do TCLE)
-- [ ] **Roteiro da sessão observada** (sem instrução textual, conforme o pitch)
+- ~~TALE + TCLE dos responsáveis~~ — **não se aplica** (sem menores)
+- ~~Termo de uso de imagem/vídeo~~ — **não se aplica** (sem filmagem). Se decidirem gravar a **tela** do jogo, avaliar com o CEP se precisa de cláusula específica.
+- [ ] **Roteiro da sessão observada** (sem instrução textual, conforme o pitch) e **ficha de anotação do observador**
 - [ ] **Instrumento de coleta**: lista exata do que a telemetria registra (ver §5)
 - [ ] **Termo de anuência** da instituição ou local onde os testes ocorrerão
 - [ ] Folha de rosto, cronograma e orçamento (provavelmente custo zero), conforme exigido pela Plataforma Brasil
@@ -85,11 +87,15 @@ Pelo cronograma do pitch, os **testes iniciais são em mar–abr/2027**. A trami
 - [ ] **Aviso de privacidade** acessível no jogo (em Libras no futuro, conforme o pilar visual)
 - [ ] Logs do servidor sem dados pessoais desnecessários
 
-## 7. Decisões pendentes deste plano
+## 7. Decisões deste plano
 
-1. Quem será o **pesquisador responsável** no CEP?
-2. Haverá **participantes menores** de idade?
-3. **Quantos** participantes e **onde** serão os testes (UFG, escola, associação de surdos)?
-4. As sessões serão **filmadas**?
-5. Testes com **login Google** ou com **código de sessão**?
-6. Qual dado de "grupo" é realmente necessário (surdo/ouvinte/especialista, nível de Libras/ELiS)?
+**Decididas (2026-11-26)**
+- Pesquisador responsável: **Nicolas** (confirmar se o CEP aceita graduando)
+- Participantes: **somente maiores de 18 anos**
+- Sessões **não serão filmadas**
+
+**Pendentes**
+1. **Quantos** participantes e **onde** serão os testes (UFG, associação de surdos, outro)? O CEP vai pedir número estimado e local, com termo de anuência.
+2. Testes com **login Google** ou com **código de sessão**?
+3. Qual dado de "grupo" é realmente necessário (surdo/ouvinte/especialista, nível de Libras/ELiS)?
+4. Haverá **gravação de tela** do jogo durante as sessões?
