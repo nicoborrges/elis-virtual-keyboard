@@ -44,6 +44,11 @@ Cada mão (`createArticulatedHand`) é montada como uma árvore hierárquica de 
 
 ---
 
+### 1.4 Pipeline de captura (calibração e clipes)
+O rig agora vive em [`src/components/scene/handRig.ts`](./src/components/scene/handRig.ts) e recebe dados reais pela pipeline de captura ([`docs/pipeline-captura.md`](./docs/pipeline-captura.md)): `getPoseFromElis()` aplica as poses calibradas de `src/data/rigCalibration.json` (por dedo, quando houver) e o Estúdio reproduz vídeos convertidos em ângulos do rig.
+
+---
+
 ## 2. Alternativas para Evoluir o Realismo Visual no Futuro
 
 Caso o projeto evolua para uma visualização fotorrealista ou com avatar completo de Libras, existem três caminhos principais recomendados:

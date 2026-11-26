@@ -22,6 +22,10 @@ Este repo hoje é o **protótipo do teclado ELiS** (Vite + React 19 + TS + Tailw
 - `src/data/elisMap.ts` — os 95 visografemas (char da fonte ↔ etapa ↔ rótulo).
 - `src/data/articulation3DMap.ts` — pontos de articulação → posição 3D / câmera.
 
+- `estudio.html` + `src/studio/` — **Estúdio de Captura**: fotos/vídeos de Libras → landmarks (MediaPipe, no navegador) → rig. Ver [docs/pipeline-captura.md](docs/pipeline-captura.md).
+- `src/pipeline/` — núcleo sem DOM da pipeline (solver, classificador ELiS, limpeza, calibração) + testes (`npm test`).
+- `src/components/scene/handRig.ts` — rig procedural compartilhado (teclado + estúdio); aplica `src/data/rigCalibration.json`.
+
 O teclado é um **módulo à parte** (adaptador de entrada). O protótipo atual é, na prática, o embrião da **Câmara de Testes** (ver §4).
 
 ## 3. O que os decks definem
@@ -82,6 +86,7 @@ O teclado é um **módulo à parte** (adaptador de entrada). O protótipo atual 
 **Arte e animação**
 - Assets: **metade gerados por IA, metade assets livres de licença** (preferir CC0; registrar origem/licença de cada asset).
 - **Pipeline de IA está no escopo**: vai alimentar o 3D/animação dos sinais. Vídeos de referência gravados pela **monitora da Letras**. O rig procedural atual (NOTAS_MODELO_3D.md) equivale à contingência "poses-chave".
+- **Pipeline de alimentação (primeira fatia, 2026-11-26):** roda no navegador (MediaPipe), neste repo. **Fotos calibram** as poses dos visografemas; **vídeos viram clipes** por palavra. Landmarks limpos são a fonte da verdade (independe da engine); ângulos do rig são derivados. Mídia bruta fica em `capturas/` (gitignored). Ainda **não testada com filmagem real**.
 - **Duas fontes de animação:** o **rig procedural** continua animando **qualquer combinação** (Câmara de Testes); **palavras do dicionário** usam as animações da **pipeline de IA**.
 
 **Pesquisa e projeto**
@@ -131,7 +136,8 @@ Referência: artes conceituais dos decks (logo dourado, figura encapuzada com m�
 
 - Idioma do código: identificadores em inglês; textos de UI e docs em pt-BR.
 - Commits: `tipo[Escopo]: descrição` (ex.: `feat[ELiSKeyboard]: ...`, `fix[Hands3D]: ...`). **Sempre commitar** ao concluir uma alteração (pedido do Nicolas).
-- Antes de concluir: `npm run lint` e `npm run build`.
+- Antes de concluir: `npm run lint`, `npm test` e `npm run build`.
+- O bundle do teclado não pode receber o MediaPipe: o estúdio é uma entrada separada do Vite (`estudio.html`).
 - Não alterar `public/fonts/ELiS-Beta.otf` nem os `char` de `elisMap.ts` sem validar na fonte.
 - Sinais/palavras de Libras novos só entram no dicionário com validação da equipe da Letras-UFG.
 

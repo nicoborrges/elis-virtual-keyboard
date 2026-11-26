@@ -23,6 +23,10 @@ Consulte [`NOTAS_MODELO_3D.md`](./NOTAS_MODELO_3D.md) para detalhes sobre a abor
     - **Etapa 5 (Movimento)**: 44 visografemas divididos em 3 subcategorias (*Braço*, *Dedos / Punho*, *Sem Mãos / Facial*).
     - Consolidação automática ao selecionar o 5º visografema com feedback visual (`canvas-confetti`) e retorno automático à Etapa 1.
 
+## Estúdio de Captura (pipeline de alimentação)
+
+Fotos e vídeos de Libras alimentam o modelo 3D: fotos calibram as poses dos visografemas e vídeos viram clipes de sinais. Abra `http://localhost:5173/estudio.html` com `npm run dev`. Detalhes em [`docs/pipeline-captura.md`](./docs/pipeline-captura.md).
+
 ## Stack Técnica
 
 - **Vite + React 19 (TypeScript)**
@@ -41,5 +45,6 @@ Build de produção:
 
 ```bash
 npm run lint
+npm test
 npm run build
 ```

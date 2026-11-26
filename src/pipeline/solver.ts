@@ -206,7 +206,12 @@ export function solveHandPose(hand: CapturedHand): Omit<SolvedHand, 'offset'> {
 export interface RawHandDetection {
   image: Vec3[];
   world: Vec3[];
-  /** Rótulo do MediaPipe ("Left"/"Right"); na v1.2.3 já é a mão do sujeito. */
+  /**
+   * Rótulo do MediaPipe ("Left"/"Right"). Observado na v1.2.3: segue a convenção
+   * de imagem espelhada (selfie) — numa imagem NÃO espelhada, "Left" é a mão
+   * direita de quem sinaliza (fixture src/pipeline/__tests__/fixtures/). A
+   * documentação da biblioteca diz o contrário; confirmar com filmagem real.
+   */
   label: string;
   score: number;
 }
@@ -245,23 +250,43 @@ export function assignHandSides(
       const b = cost[0].left + cost[1].right;
       sides = a <= b ? ['right', 'left'] : ['left', 'right'];
     }
-    return hands.slice(0, 2).map((h, i) => toCaptured(h, sides[i], 'pose'));
+    return hands.slice(0, 2).map((h, i) => toCaptured(h, sides[i], 'pose', mirroredInput));
   }
 
-  let sides = hands.map((h): HandSide => {
-    const isRight = h.label.toLowerCase().startsWith('right');
-    return isRight !== mirroredInput ? 'right' : 'left';
-  });
+  let sides = hands.map((h) => labelSide(h.label, mirroredInput));
   if (hands.length >= 2 && sides[0] === sides[1]) {
     // Rótulos repetidos: em imagem não espelhada, a mão direita aparece à esquerda da imagem
     const rightIsFirst = (hands[0].image[0][0] < hands[1].image[0][0]) !== mirroredInput;
     sides = rightIsFirst ? ['right', 'left'] : ['left', 'right'];
   }
-  return hands.slice(0, 2).map((h, i) => toCaptured(h, sides[i], 'handedness'));
+  return hands.slice(0, 2).map((h, i) => toCaptured(h, sides[i], 'handedness', mirroredInput));
 }
 
-function toCaptured(h: RawHandDetection, side: HandSide, sideSource: CapturedHand['sideSource']): CapturedHand {
-  return { side, sideSource, score: h.score, image: h.image, world: h.world };
+/** Lado anatômico segundo o rótulo do detector (ver nota em RawHandDetection.label). */
+export function labelSide(label: string, mirroredInput: boolean): HandSide {
+  const saysRight = label.toLowerCase().startsWith('right');
+  return saysRight === mirroredInput ? 'right' : 'left';
+}
+
+function toCaptured(h: RawHandDetection, side: HandSide, sideSource: CapturedHand['sideSource'], mirroredInput: boolean): CapturedHand {
+  return { side, sideSource, labelSide: labelSide(h.label, mirroredInput), score: h.score, image: h.image, world: h.world };
+}
+
+/**
+ * Quanto o rótulo do detector concordou com o esqueleto do corpo (só quadros com
+ * corpo). Perto de 0% indica convenção de espelhamento invertida.
+ */
+export function labelAgreement(capture: LandmarkCapture): { agree: number; total: number } {
+  let agree = 0;
+  let total = 0;
+  for (const f of capture.frames) {
+    for (const h of f.hands) {
+      if (h.sideSource !== 'pose' || !h.labelSide) continue;
+      total++;
+      if (h.labelSide === h.side) agree++;
+    }
+  }
+  return { agree, total };
 }
 
 // ---------------------------------------------------------------------------

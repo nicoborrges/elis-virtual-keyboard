@@ -49,3 +49,9 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(169, 163, 153, 0.45);
 }
+
+@layer components {
+  .input {
+    @apply w-full h-8 rounded-lg bg-ink-900 border border-ink-700 px-2 text-ink-100 placeholder:text-ink-600 focus:outline-none focus:border-gold-500;
+  }
+}

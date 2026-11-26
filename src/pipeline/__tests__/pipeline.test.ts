@@ -8,6 +8,7 @@ import { anglesFromPoseTargets, segmentDirections } from '../rigKinematics';
 import { assignHandSides, solveCapture, solveHandPose, POSE_LM } from '../solver';
 import { syntheticHand } from '../synthetic';
 import type { CapturedPose, HandSide, LandmarkCapture, SolvedHand, Vec3 } from '../types';
+import realFixture from './fixtures/mediapipe-rig-right-tgl.json';
 
 const THUMBS = ['q', 'w', 'e', 'r', 't', 'y'];
 const FINGERS = ['q', 'u', 'o', 's', 'g'];
@@ -102,19 +103,30 @@ describe('lado das mãos e deslocamento', () => {
 
   it('usa o punho do corpo mais próximo mesmo com rótulo trocado', () => {
     const { hand } = synthFromElis('right', 1, 'y', 'g', 'l');
-    const raw = { image: hand.image.map((p): Vec3 => [p[0] - 0.2, p[1], p[2]]), world: hand.world, label: 'Left', score: 0.9 };
+    // Rótulo "Right" numa imagem não espelhada = mão esquerda (errado de propósito aqui)
+    const raw = { image: hand.image.map((p): Vec3 => [p[0] - 0.2, p[1], p[2]]), world: hand.world, label: 'Right', score: 0.9 };
     const pose = poseWith([raw.image[0][0], raw.image[0][1], 0], [0.8, 0.6, 0]);
     const [assigned] = assignHandSides([raw], pose, size);
     expect(assigned.side).toBe('right');
     expect(assigned.sideSource).toBe('pose');
   });
 
-  it('sem corpo, confia no rótulo do detector (mão do sujeito)', () => {
+  it('sem corpo, usa o rótulo do detector na convenção selfie observada', () => {
     const { hand } = synthFromElis('right', 1, 'y', 'g', 'l');
-    const [a] = assignHandSides([{ image: hand.image, world: hand.world, label: 'Right', score: 0.9 }], undefined, size);
+    const [a] = assignHandSides([{ image: hand.image, world: hand.world, label: 'Left', score: 0.9 }], undefined, size);
     expect(a.side).toBe('right');
-    const [b] = assignHandSides([{ image: hand.image, world: hand.world, label: 'Right', score: 0.9 }], undefined, size, true);
+    const [b] = assignHandSides([{ image: hand.image, world: hand.world, label: 'Left', score: 0.9 }], undefined, size, true);
     expect(b.side).toBe('left');
+  });
+
+  it('saída REAL do MediaPipe (render do rig: mão direita, t g l) é lida corretamente', () => {
+    const raw = { image: realFixture.image as Vec3[], world: realFixture.world as Vec3[], label: realFixture.label, score: realFixture.score };
+    const [hand] = assignHandSides([raw], undefined, realFixture.source);
+    expect(hand.side).toBe('right');
+    const sug = suggestForHand({ ...solveHandPose(hand), offset: [0, 0, 0] }, 1);
+    expect(sug.thumb[0].char).toBe('t');
+    expect(sug.fingers[0].char).toBe('g');
+    expect(sug.palm[0].char).toBe('l');
   });
 
   const captureOf = (frames: LandmarkCapture['frames']): LandmarkCapture => ({

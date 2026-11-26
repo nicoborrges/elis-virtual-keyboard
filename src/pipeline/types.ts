@@ -18,6 +18,8 @@ export interface CapturedHand {
   side: HandSide;
   /** Como o lado foi decidido: pelo esqueleto do corpo (mais confiável) ou pelo classificador de mão. */
   sideSource: 'pose' | 'handedness';
+  /** Lado segundo o rótulo do detector (para conferir a convenção de espelhamento). */
+  labelSide?: HandSide;
   score: number;
   /** 21 landmarks normalizados na imagem (x, y ∈ [0,1], y para baixo; z relativo ao punho). */
   image: Vec3[];
