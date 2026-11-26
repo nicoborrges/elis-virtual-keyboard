@@ -13,7 +13,7 @@ Cada mão (`createArticulatedHand`) é montada como uma árvore hierárquica de 
 
 - **Raiz e Punho (`root` → `wrist`)**:
   - Controla a posição espacial da mão (usada nos deslocamentos de **Movimento** e na altura/aproximação relativa do **Ponto de Articulação**) e a rotação global da palma (**Etapa 3 — Orientação da Palma**).
-  - Contém um punho estilizado com anel luminoso diferenciador: **azul-celeste (`#38bdf8`)** para a mão esquerda e **índigo (`#6366f1`)** para a mão direita.
+  - Contém um punho estilizado com anel luminoso diferenciador (paleta Acme): **vinho (`#b8615c`)** para a mão esquerda/apoio e **ouro (`#d8ae5e`)** para a mão direita/dominante.
 - **Palma Esculpida**:
   - Gerada com `THREE.ExtrudeGeometry` (contorno trapezoidal arredondado com bisel suave) somada a uma eminência tenar (base do polegar) e contraste palmar/dorsal.
 - **Polegar Articulado (`cmc` → `mcp` → `ip`)**:

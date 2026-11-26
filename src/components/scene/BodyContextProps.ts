@@ -30,7 +30,7 @@ export function createBodyContextProps(
     metalness: 0.04,
   });
   const darkFeatureMat = new THREE.MeshStandardMaterial({
-    color: 0x334155,
+    color: 0x3a3631,
     roughness: 0.45,
     metalness: 0.15,
   });
@@ -247,7 +247,7 @@ export function createBodyContextProps(
   const neutralRingMesh = new THREE.Mesh(
     new THREE.TorusGeometry(0.58, 0.02, 12, 48),
     new THREE.MeshBasicMaterial({
-      color: 0x818cf8,
+      color: 0xd8ae5e,
       transparent: true,
       opacity: 0.55,
     })
@@ -381,7 +381,7 @@ export function createBodyContextProps(
   root.add(beacon);
 
   const beaconRingMat = new THREE.MeshBasicMaterial({
-    color: 0x6366f1,
+    color: 0xd8ae5e,
     transparent: true,
     opacity: 0.9,
     side: THREE.DoubleSide,
@@ -395,7 +395,7 @@ export function createBodyContextProps(
   beacon.add(beaconRing);
 
   const beaconCoreMat = new THREE.MeshBasicMaterial({
-    color: 0xa5b4fc,
+    color: 0xf5e9cc,
     transparent: true,
     opacity: 0.95,
     depthTest: false,

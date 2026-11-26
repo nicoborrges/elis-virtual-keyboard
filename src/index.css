@@ -15,6 +15,22 @@
   font-feature-settings: "liga" 1, "calt" 1;
 }
 
+/* Motivo visual Acme: cantoneiras douradas em "L" nos 4 cantos (overlay sem elementos extras) */
+.acme-frame {
+  --frame-c: rgba(216, 174, 94, 0.55);
+  --frame-len: 16px;
+  --frame-w: 1.5px;
+  background:
+    linear-gradient(var(--frame-c), var(--frame-c)) top left / var(--frame-len) var(--frame-w) no-repeat,
+    linear-gradient(var(--frame-c), var(--frame-c)) top left / var(--frame-w) var(--frame-len) no-repeat,
+    linear-gradient(var(--frame-c), var(--frame-c)) top right / var(--frame-len) var(--frame-w) no-repeat,
+    linear-gradient(var(--frame-c), var(--frame-c)) top right / var(--frame-w) var(--frame-len) no-repeat,
+    linear-gradient(var(--frame-c), var(--frame-c)) bottom left / var(--frame-len) var(--frame-w) no-repeat,
+    linear-gradient(var(--frame-c), var(--frame-c)) bottom left / var(--frame-w) var(--frame-len) no-repeat,
+    linear-gradient(var(--frame-c), var(--frame-c)) bottom right / var(--frame-len) var(--frame-w) no-repeat,
+    linear-gradient(var(--frame-c), var(--frame-c)) bottom right / var(--frame-w) var(--frame-len) no-repeat;
+}
+
 /* Custom sleek scrollbars for mobile emulation */
 ::-webkit-scrollbar {
   width: 5px;
@@ -26,10 +42,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.25);
+  background: rgba(169, 163, 153, 0.25);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.45);
+  background: rgba(169, 163, 153, 0.45);
 }

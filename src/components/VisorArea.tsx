@@ -55,7 +55,7 @@ export const VisorArea: React.FC<VisorAreaProps> = ({
   return (
     <section
       aria-label="Visor ELiS e Modelo 3D das Mãos"
-      className="flex-1 min-h-0 flex flex-col bg-[radial-gradient(ellipse_at_50%_35%,_rgba(49,46,129,0.24)_0%,_rgba(2,6,23,0.98)_75%)] overflow-hidden"
+      className="flex-1 min-h-0 flex flex-col bg-[radial-gradient(ellipse_at_50%_35%,_rgba(216,174,94,0.10)_0%,_rgba(10,9,8,0.98)_75%)] overflow-hidden"
     >
       {/* Unified 3D Two-Hands Stage */}
       <Hands3DCanvas
@@ -72,20 +72,20 @@ export const VisorArea: React.FC<VisorAreaProps> = ({
         {/* Quiet single-line micro-hint only when hovering/focusing a visografema */}
         <div className="h-4 flex items-center justify-center mb-1">
           {lastHoveredLabel && (
-            <span className="text-[11px] font-medium text-indigo-300/90 truncate max-w-full">
+            <span className="text-[11px] font-medium text-gold-300/90 truncate max-w-full">
               {lastHoveredLabel}
             </span>
           )}
         </div>
 
         {/* Word Stream + Quiet Inline Secondary Actions (Copy / Clear) */}
-        <div className="flex items-center justify-between gap-2 min-h-[54px] max-h-[84px] rounded-2xl bg-slate-900/55 border border-slate-800/60 px-3 py-1.5">
+        <div className="flex items-center justify-between gap-2 min-h-[54px] max-h-[84px] rounded-2xl bg-ink-900/55 border border-ink-800/60 px-3 py-1.5">
           <div
             className="flex-1 flex flex-wrap items-center gap-y-1.5 overflow-y-auto max-h-[68px]"
             aria-live="polite"
           >
             {!hasAnyContent ? (
-              <span className="text-xs text-slate-500 select-none">
+              <span className="text-xs text-ink-500 select-none">
                 Toque nos símbolos abaixo para compor um sinal
               </span>
             ) : (
@@ -112,8 +112,8 @@ export const VisorArea: React.FC<VisorAreaProps> = ({
                       className={cn(
                         'inline-flex items-center px-2 pt-2 pb-1 mr-1.5 rounded-xl border text-[32px] leading-none font-elis tracking-wider animate-word-pop transition-all duration-200',
                         isCurrentlyPlaying
-                          ? 'bg-emerald-500/15 border-emerald-400/70 text-white shadow-[0_0_12px_-3px_rgba(52,211,153,0.5)]'
-                          : 'bg-slate-950/60 border-slate-800/80 hover:border-indigo-400/50 text-slate-100'
+                          ? 'bg-vida-500/15 border-vida-400/70 text-white shadow-[0_0_12px_-3px_rgba(143,196,174,0.5)]'
+                          : 'bg-ink-950/60 border-ink-800/80 hover:border-gold-400/50 text-ink-100'
                       )}
                       title={`Tocar sinal: ${sign.items
                         .map((i) => i.label)
@@ -129,13 +129,13 @@ export const VisorArea: React.FC<VisorAreaProps> = ({
                     className={cn(
                       'inline-flex items-center px-2 pt-2 pb-1 rounded-xl border text-[32px] leading-none font-elis tracking-wider transition-all duration-200',
                       isPlaying && playingSign?.id === '__active__'
-                        ? 'bg-emerald-500/15 border-emerald-400/70 text-white'
-                        : 'bg-indigo-500/10 border-indigo-400/35 text-indigo-100'
+                        ? 'bg-vida-500/15 border-vida-400/70 text-white'
+                        : 'bg-gold-500/10 border-gold-400/35 text-gold-100'
                     )}
                     title="Sinal em construção"
                   >
                     {activeSignChars}
-                    <span className="ml-1 w-0.5 h-5 bg-indigo-400 animate-pulse rounded-full" />
+                    <span className="ml-1 w-0.5 h-5 bg-gold-400 animate-pulse rounded-full" />
                   </span>
                 )}
               </>
@@ -144,7 +144,7 @@ export const VisorArea: React.FC<VisorAreaProps> = ({
 
           {/* Quiet monochrome secondary actions — only appear when there is text */}
           {hasAnyContent && (
-            <div className="flex items-center gap-1 shrink-0 pl-1 border-l border-slate-800/70">
+            <div className="flex items-center gap-1 shrink-0 pl-1 border-l border-ink-800/70">
               <button
                 type="button"
                 onClick={onCopy}
@@ -153,8 +153,8 @@ export const VisorArea: React.FC<VisorAreaProps> = ({
                 className={cn(
                   'p-2 rounded-xl transition-colors active:scale-90',
                   copied
-                    ? 'text-emerald-400 bg-emerald-500/10'
-                    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/70'
+                    ? 'text-vida-400 bg-vida-500/10'
+                    : 'text-ink-400 hover:text-ink-100 hover:bg-ink-800/70'
                 )}
               >
                 {copied ? (
@@ -169,7 +169,7 @@ export const VisorArea: React.FC<VisorAreaProps> = ({
                 onClick={onClearAll}
                 aria-label="Limpar visor"
                 title="Limpar tudo"
-                className="p-2 rounded-xl text-slate-500 hover:text-rose-300 hover:bg-slate-800/70 transition-colors active:scale-90"
+                className="p-2 rounded-xl text-ink-500 hover:text-wine-300 hover:bg-ink-800/70 transition-colors active:scale-90"
               >
                 <Trash2 className="w-4 h-4" />
               </button>

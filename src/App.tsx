@@ -142,6 +142,8 @@ export function App() {
         particleCount: 24,
         spread: 50,
         origin: { y: 0.38 },
+        // "Conjurar": centelhas de ouro e vida (paleta Acme)
+        colors: ['#D8AE5E', '#E3C482', '#F5E9CC', '#8FC4AE'],
         disableForReducedMotion: true,
       });
     } catch {
@@ -327,27 +329,27 @@ export function App() {
   }, []);
 
   return (
-    <div className="min-h-[100dvh] w-full bg-gradient-to-b from-slate-900 via-slate-950 to-black flex items-center justify-center sm:p-4 md:p-6">
+    <div className="min-h-[100dvh] w-full bg-[radial-gradient(ellipse_at_50%_20%,_#1A1816_0%,_#0A0908_70%)] flex items-center justify-center sm:p-4 md:p-6">
       {/* Smartphone Vertical Viewport Container (aspect-[9/19.5] / max-w-md) */}
-      <main className="relative w-full max-w-md h-[100dvh] sm:h-[min(92dvh,860px)] sm:aspect-[9/19.5] flex flex-col bg-slate-950 sm:rounded-[40px] sm:border-[6px] sm:border-slate-800/90 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.85),0_0_40px_-10px_rgba(99,102,241,0.18)] overflow-hidden">
+      <main className="relative w-full max-w-md h-[100dvh] sm:h-[min(92dvh,860px)] sm:aspect-[9/19.5] flex flex-col bg-void sm:rounded-[40px] sm:border-[6px] sm:border-ink-800/90 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.85),0_0_40px_-10px_rgba(216,174,94,0.18)] overflow-hidden">
         {/* Minimalist Top Bar (Block 1) */}
-        <header className="flex items-center justify-between px-4 h-12 bg-slate-950/90 border-b border-slate-900 select-none shrink-0">
+        <header className="flex items-center justify-between px-4 h-12 bg-void/90 border-b border-gold-900/40 select-none shrink-0">
           <div className="flex items-baseline gap-2">
-            <h1 className="text-sm font-bold tracking-tight text-slate-100">
-              ELiS
+            <h1 className="font-display text-base font-bold tracking-[0.12em] text-gold-400 drop-shadow-[0_0_8px_rgba(216,174,94,0.25)]">
+              ACME
             </h1>
-            <span className="text-[11px] font-medium text-slate-500">
-              Teclado Visual
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
+              The ELiS Game
             </span>
           </div>
 
           <button
             type="button"
             onClick={() => setIsRefOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[11px] font-medium text-slate-300 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-ink-900 hover:bg-ink-800 border border-ink-800 text-[11px] font-medium text-ink-300 transition-colors"
             title="Consultar tabela completa de 95 visografemas"
           >
-            <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
+            <BookOpen className="w-3.5 h-3.5 text-gold-400" />
             <span>Tabela</span>
           </button>
         </header>

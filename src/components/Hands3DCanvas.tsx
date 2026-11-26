@@ -534,7 +534,7 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
       });
     } catch {
       container.innerHTML =
-        '<div class="flex items-center justify-center h-full text-xs text-slate-400 px-4 text-center">Visualização 3D indisponível neste navegador (WebGL desativado).</div>';
+        '<div class="flex items-center justify-center h-full text-xs text-ink-400 px-4 text-center">Visualização 3D indisponível neste navegador (WebGL desativado).</div>';
       return;
     }
 
@@ -570,7 +570,7 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
     controlsRef.current = controls;
 
     // 3-Point Studio Lighting
-    const hemiLight = new THREE.HemisphereLight(0xdbeafe, 0x1e1b4b, 1.1);
+    const hemiLight = new THREE.HemisphereLight(0xf3e7cf, 0x1f1612, 1.1);
     scene.add(hemiLight);
 
     const keyLight = new THREE.DirectionalLight(0xfff5eb, 1.65);
@@ -578,11 +578,11 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
     keyLight.castShadow = true;
     scene.add(keyLight);
 
-    const rimLight = new THREE.DirectionalLight(0x818cf8, 1.15);
+    const rimLight = new THREE.DirectionalLight(0xd8ae5e, 1.15);
     rimLight.position.set(-3.5, 2.2, -3.5);
     scene.add(rimLight);
 
-    const fillLight = new THREE.PointLight(0x38bdf8, 0.7, 12);
+    const fillLight = new THREE.PointLight(0x8fc4ae, 0.7, 12);
     fillLight.position.set(-2.5, -1.2, 3.2);
     scene.add(fillLight);
 
@@ -590,7 +590,7 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
     const baseDisc = new THREE.Mesh(
       new THREE.CylinderGeometry(2.55, 2.65, 0.05, 48),
       new THREE.MeshStandardMaterial({
-        color: 0x0f172a,
+        color: 0x1a1816,
         roughness: 0.75,
         metalness: 0.25,
         transparent: true,
@@ -602,7 +602,7 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
     scene.add(baseDisc);
 
     const baseRingMat = new THREE.MeshBasicMaterial({
-      color: 0x6366f1,
+      color: 0xd8ae5e,
       side: THREE.DoubleSide,
       transparent: true,
       opacity: 0.35,
@@ -631,20 +631,20 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
       metalness: 0.08,
     });
     const cuffMat = new THREE.MeshStandardMaterial({
-      color: 0x1e293b,
+      color: 0x2a2723,
       roughness: 0.45,
       metalness: 0.4,
     });
     const rightAccentMat = new THREE.MeshStandardMaterial({
-      color: 0x6366f1,
-      emissive: 0x4f46e5,
+      color: 0xd8ae5e,
+      emissive: 0xa67b2e,
       emissiveIntensity: 0.55,
       roughness: 0.25,
       metalness: 0.6,
     });
     const leftAccentMat = new THREE.MeshStandardMaterial({
-      color: 0x38bdf8,
-      emissive: 0x0284c7,
+      color: 0xb8615c,
+      emissive: 0x6e2a2c,
       emissiveIntensity: 0.45,
       roughness: 0.25,
       metalness: 0.6,
@@ -883,8 +883,8 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
         const pulse = (artConfig.beaconScale ?? 1) * (1 + Math.sin(elapsed * 5.2) * 0.14);
         bodyProps.beacon.scale.setScalar(pulse);
         bodyProps.beacon.lookAt(camera.position);
-        bodyProps.beaconRingMat.color.setHex(state.isPlaying ? 0x34d399 : 0x818cf8);
-        bodyProps.beaconCoreMat.color.setHex(state.isPlaying ? 0x6ee7b7 : 0xc7d2fe);
+        bodyProps.beaconRingMat.color.setHex(state.isPlaying ? 0x8fc4ae : 0xd8ae5e);
+        bodyProps.beaconCoreMat.color.setHex(state.isPlaying ? 0xd6ede3 : 0xf5e9cc);
       } else {
         bodyProps.beacon.visible = false;
       }
@@ -909,8 +909,8 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
         camera.position.copy(controls.target).add(offset);
       }
 
-      // Subtle emerald ring glow while playing
-      baseRingMat.color.setHex(state.isPlaying ? 0x34d399 : 0x6366f1);
+      // Subtle sage ring glow while playing
+      baseRingMat.color.setHex(state.isPlaying ? 0x8fc4ae : 0xd8ae5e);
       baseRingMat.opacity = state.isPlaying
         ? 0.45 + Math.sin(elapsed * 5) * 0.15
         : 0.35;
@@ -997,10 +997,16 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
         aria-label="Modelo 3D interativo de duas mãos articuladas para visualização ELiS"
       />
 
+      {/* Motivo Acme: cantoneiras douradas emoldurando o palco 3D */}
+      <div
+        aria-hidden="true"
+        className="acme-frame pointer-events-none absolute inset-2.5"
+      />
+
       {/* Minimal Live Playback Pill (only shown while playing) */}
       {isPlaying && playingSign && (
-        <div className="pointer-events-none absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950/80 backdrop-blur-md border border-emerald-400/40 text-[11px] font-medium text-emerald-200">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+        <div className="pointer-events-none absolute top-4 left-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-vida-950/80 backdrop-blur-md border border-vida-400/40 text-[11px] font-medium text-vida-200">
+          <span className="w-1.5 h-1.5 rounded-full bg-vida-400 animate-ping" />
           <span>
             Tocando {playingIndex + 1}/{totalPlayingSigns}
           </span>
@@ -1008,7 +1014,7 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
       )}
 
       {/* Quiet Floating Controls (Top-Right) */}
-      <div className="absolute top-3 right-3 flex items-center gap-1.5">
+      <div className="absolute top-4 right-4 flex items-center gap-1.5">
         <button
           type="button"
           onClick={() => setMirrorHands((prev) => !prev)}
@@ -1021,8 +1027,8 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
           className={cn(
             'flex items-center gap-1 px-2 py-1.5 rounded-xl text-[10px] font-medium backdrop-blur-md border transition-colors',
             mirrorHands
-              ? 'bg-slate-900/60 border-slate-700/60 text-slate-200 hover:bg-slate-800/80'
-              : 'bg-slate-900/40 border-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800/70'
+              ? 'bg-ink-900/60 border-ink-700/60 text-ink-200 hover:bg-ink-800/80'
+              : 'bg-ink-900/40 border-ink-800/60 text-ink-400 hover:text-ink-200 hover:bg-ink-800/70'
           )}
         >
           <Hand className="w-3.5 h-3.5" />
@@ -1034,7 +1040,7 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
           onClick={handleResetCamera}
           title="Centralizar câmera 3D"
           aria-label="Centralizar câmera 3D"
-          className="p-1.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-700/60 text-slate-300 backdrop-blur-md transition-colors"
+          className="p-1.5 rounded-xl bg-ink-900/60 hover:bg-ink-800/80 border border-ink-700/60 text-ink-300 backdrop-blur-md transition-colors"
         >
           <RotateCcw className="w-3.5 h-3.5" />
         </button>

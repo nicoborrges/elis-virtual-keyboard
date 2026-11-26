@@ -74,10 +74,10 @@ export const SelectorKeyboard: React.FC<SelectorKeyboardProps> = ({
   return (
     <section
       aria-label="Teclado Seletor Modular de Visografemas"
-      className="shrink-0 flex flex-col bg-slate-900/95 rounded-t-[28px] border-t border-slate-800/80 shadow-[0_-12px_32px_rgba(0,0,0,0.5)] overflow-hidden"
+      className="shrink-0 flex flex-col bg-ink-900/95 rounded-t-[28px] border-t border-ink-800/80 shadow-[0_-12px_32px_rgba(0,0,0,0.5)] overflow-hidden"
     >
       {/* 1. Single Unified Stepper (5 Slim Interactive Slot Pills — zero duplication) */}
-      <div className="px-3 pt-2.5 pb-2 border-b border-slate-800/60">
+      <div className="px-3 pt-2.5 pb-2 border-b border-ink-800/60">
         <div
           role="tablist"
           aria-label="Etapas e slots dos 5 visografemas do sinal"
@@ -102,12 +102,12 @@ export const SelectorKeyboard: React.FC<SelectorKeyboardProps> = ({
                 }`}
                 onClick={() => onChangeStep(stepDef.step)}
                 className={cn(
-                  'relative flex items-center justify-center gap-1 h-10 rounded-xl border px-1.5 transition-all duration-200 select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400',
+                  'relative flex items-center justify-center gap-1 h-10 rounded-xl border px-1.5 transition-all duration-200 select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400',
                   isActive
-                    ? 'bg-indigo-600/20 border-indigo-400/80 text-white shadow-[0_0_14px_-4px_rgba(99,102,241,0.55)]'
+                    ? 'bg-gold-600/20 border-gold-400/80 text-white shadow-[0_0_14px_-4px_rgba(216,174,94,0.55)]'
                     : isFilled
-                    ? 'bg-slate-950/70 border-slate-700/80 text-slate-100 hover:border-slate-600'
-                    : 'bg-slate-950/35 border-slate-800/60 text-slate-500 hover:text-slate-300 hover:border-slate-700/80'
+                    ? 'bg-ink-950/70 border-ink-700/80 text-ink-100 hover:border-ink-600'
+                    : 'bg-ink-950/35 border-ink-800/60 text-ink-500 hover:text-ink-300 hover:border-ink-700/80'
                 )}
               >
                 {slotEntry.item ? (
@@ -122,7 +122,7 @@ export const SelectorKeyboard: React.FC<SelectorKeyboardProps> = ({
                       aria-hidden="true"
                       className={cn(
                         'absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full',
-                        isActive ? 'bg-indigo-400' : 'bg-emerald-400/80'
+                        isActive ? 'bg-gold-400' : 'bg-vida-400/80'
                       )}
                     />
                   </>
@@ -131,7 +131,7 @@ export const SelectorKeyboard: React.FC<SelectorKeyboardProps> = ({
                     <span
                       className={cn(
                         'text-[10px] font-bold leading-none',
-                        isActive ? 'text-indigo-300' : 'text-slate-600'
+                        isActive ? 'text-gold-300' : 'text-ink-600'
                       )}
                     >
                       {stepDef.step}
@@ -139,7 +139,7 @@ export const SelectorKeyboard: React.FC<SelectorKeyboardProps> = ({
                     <span
                       className={cn(
                         'text-[10.5px] font-medium truncate',
-                        isActive ? 'text-indigo-100' : 'text-slate-400'
+                        isActive ? 'text-gold-100' : 'text-ink-400'
                       )}
                     >
                       {stepDef.shortTitle}
@@ -156,7 +156,7 @@ export const SelectorKeyboard: React.FC<SelectorKeyboardProps> = ({
           <div
             role="tablist"
             aria-label={`Subcategorias de ${currentStepDef.shortTitle}`}
-            className="grid grid-flow-col auto-cols-fr gap-1 p-0.5 rounded-xl bg-slate-950/70 border border-slate-800/60 mt-2"
+            className="grid grid-flow-col auto-cols-fr gap-1 p-0.5 rounded-xl bg-ink-950/70 border border-ink-800/60 mt-2"
           >
             {currentStepDef.categories.map((cat) => {
               const isCatActive = activeCategory === cat.id;
@@ -170,8 +170,8 @@ export const SelectorKeyboard: React.FC<SelectorKeyboardProps> = ({
                   className={cn(
                     'py-1 px-1.5 rounded-lg text-[11px] font-medium transition-all truncate',
                     isCatActive
-                      ? 'bg-slate-800 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-ink-800 text-white shadow-sm'
+                      : 'text-ink-400 hover:text-ink-200'
                   )}
                 >
                   {cat.label}
@@ -202,11 +202,11 @@ export const SelectorKeyboard: React.FC<SelectorKeyboardProps> = ({
                 title={item.label}
                 aria-label={item.label}
                 className={cn(
-                  'group relative flex items-center justify-center rounded-xl border transition-all duration-150 select-none active:scale-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400',
+                  'group relative flex items-center justify-center rounded-xl border transition-all duration-150 select-none active:scale-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400',
                   activeStep <= 3 ? 'h-12' : 'h-11',
                   isSelected
-                    ? 'bg-indigo-600/25 border-indigo-400 text-white shadow-[0_0_14px_-4px_rgba(99,102,241,0.5)]'
-                    : 'bg-slate-950/75 hover:bg-slate-800/80 border-slate-800/80 hover:border-slate-700 text-slate-100'
+                    ? 'bg-gold-600/25 border-gold-400 text-white shadow-[0_0_14px_-4px_rgba(216,174,94,0.5)]'
+                    : 'bg-ink-950/75 hover:bg-ink-800/80 border-ink-800/80 hover:border-ink-700 text-ink-100'
                 )}
               >
                 <span
@@ -242,9 +242,9 @@ export const SelectorKeyboard: React.FC<SelectorKeyboardProps> = ({
             onBlur={() => onHoverItem(null)}
             title="Atalho: Todos os dedos iguais / fechado"
             aria-label="Atalho: Todos os dedos fechados"
-            className="flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/70 text-slate-200 transition-all active:scale-95 shrink-0"
+            className="flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl bg-ink-800/80 hover:bg-ink-800 border border-ink-700/70 text-ink-200 transition-all active:scale-95 shrink-0"
           >
-            <Zap aria-hidden="true" className="w-3.5 h-3.5 text-amber-400" />
+            <Zap aria-hidden="true" className="w-3.5 h-3.5 text-gold-300" />
             <span
               aria-hidden="true"
               className="font-elis text-[24px] leading-none translate-y-[1px] tracking-widest text-white"
@@ -260,9 +260,9 @@ export const SelectorKeyboard: React.FC<SelectorKeyboardProps> = ({
           disabled={!hasAnyContent}
           title="Inserir espaço / próximo sinal"
           aria-label="Espaço"
-          className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl bg-slate-800/70 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-medium transition-all active:scale-[0.98] disabled:opacity-35 disabled:pointer-events-none"
+          className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl bg-ink-800/70 hover:bg-ink-800 border border-ink-800 text-ink-300 text-xs font-medium transition-all active:scale-[0.98] disabled:opacity-35 disabled:pointer-events-none"
         >
-          <Space className="w-3.5 h-3.5 text-slate-400" />
+          <Space className="w-3.5 h-3.5 text-ink-400" />
           <span>Espaço</span>
         </button>
 
@@ -272,7 +272,7 @@ export const SelectorKeyboard: React.FC<SelectorKeyboardProps> = ({
           disabled={!hasAnyContent}
           title="Apagar último visografema"
           aria-label="Apagar"
-          className="flex items-center justify-center w-12 h-10 rounded-xl bg-slate-800/70 hover:bg-slate-800 border border-slate-800 text-slate-300 transition-all active:scale-90 disabled:opacity-35 disabled:pointer-events-none shrink-0"
+          className="flex items-center justify-center w-12 h-10 rounded-xl bg-ink-800/70 hover:bg-ink-800 border border-ink-800 text-ink-300 transition-all active:scale-90 disabled:opacity-35 disabled:pointer-events-none shrink-0"
         >
           <Delete className="w-4 h-4" />
         </button>
@@ -291,13 +291,13 @@ export const SelectorKeyboard: React.FC<SelectorKeyboardProps> = ({
           className={cn(
             'flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-xs font-semibold border transition-all active:scale-95 disabled:opacity-35 disabled:pointer-events-none shrink-0',
             isPlaying
-              ? 'bg-emerald-500 hover:bg-emerald-400 border-emerald-400 text-slate-950 shadow-[0_0_16px_-3px_rgba(52,211,153,0.6)]'
-              : 'bg-indigo-600 hover:bg-indigo-500 border-indigo-500 text-white shadow-sm shadow-indigo-500/30'
+              ? 'bg-vida-500 hover:bg-vida-400 border-vida-400 text-ink-950 shadow-[0_0_16px_-3px_rgba(143,196,174,0.6)]'
+              : 'bg-gold-400 hover:bg-gold-300 border-gold-300 text-void shadow-[0_0_14px_-4px_rgba(216,174,94,0.6)]'
           )}
         >
           {isPlaying ? (
             <>
-              <Square className="w-3.5 h-3.5 fill-slate-950" />
+              <Square className="w-3.5 h-3.5 fill-ink-950" />
               <span>Parar</span>
             </>
           ) : (
