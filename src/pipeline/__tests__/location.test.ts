@@ -60,8 +60,9 @@ describe('ponto de articulação (etapa 4) pelo esqueleto do corpo', () => {
   });
 
   it('mão na boca → Boca (27); no queixo → Queixo (30)', () => {
-    expect(best(frame(handAt('right', [0.5, 0.36], [0.5, 0.33])))).toBe(27);
-    expect(best(frame(handAt('right', [0.5, 0.42], [0.5, 0.39])))).toBe(30);
+    // palma ao lado, só as pontas dos dedos no ponto (como numa mão real)
+    expect(best(frame(handAt('right', [0.42, 0.35], [0.5, 0.33])))).toBe(27);
+    expect(best(frame(handAt('right', [0.42, 0.41], [0.5, 0.39])))).toBe(30);
   });
 
   it('mão no peito → Tórax (34); ao lado do tronco → 36', () => {
@@ -90,6 +91,12 @@ describe('ponto de articulação (etapa 4) pelo esqueleto do corpo', () => {
   it('dedos da mão dominante na palma da outra mão → Palma da mão (45)', () => {
     const f = frame(handAt('right', [0.47, 0.6], [0.5, 0.65]), handAt('left', [0.5, 0.655], [0.55, 0.62]));
     expect(best(f)).toBe(45);
+  });
+
+  it('palma aberta na frente do rosto → Rosto (17); dedos só na testa continua Testa', () => {
+    // nariz em (0,5; 0,29); altura do rosto (olhos → boca) = 0,08
+    expect(best(frame(handAt('right', [0.5, 0.3], [0.5, 0.2])))).toBe(17);
+    expect(best(frame(handAt('right', [0.47, 0.2], [0.5, 0.146])))).toBe(21);
   });
 
   it('sem ombros visíveis não mede', () => {

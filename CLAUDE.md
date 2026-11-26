@@ -99,7 +99,8 @@ O teclado é um **módulo à parte** (adaptador de entrada). O protótipo atual 
 - Nome **Acme** é definitivo.
 
 **Mapeamento decks → código**
-- 5 parâmetros do slide 5 ≈ 5 slots do teclado (`StepNumber 1..5`).
+- 5 parâmetros do slide 5 ≈ 5 slots do teclado (`StepNumber 1..5`). A ordem da escrita ELiS é fixa: configuração de dedos (polegar + demais dedos), orientação da palma, ponto de articulação, movimento (que pode faltar). Ex.: BONITO = `tgçQÄ`.
+- Escritas ELiS de **referência** para medir a pipeline ficam em `src/data/elisReferences.json` (não é o dicionário).
 - "Parser de visografemas" ≈ `elisMap.ts` + consolidação em `App.tsx` (ainda sem regras de puzzle nem dicionário de palavras).
 - "Triggers de gameplay" — **não existe ainda**.
 

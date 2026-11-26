@@ -1,6 +1,6 @@
 # Pipeline de captura — fotos e vídeos de Libras → rig 3D
 
-> **Status (2026-11-26):** funcionando no **Estúdio de Captura** (`/estudio.html`). Primeiro teste com mãos humanas: os 13 GIFs de cumprimentos do IFPR (44 mãos em 40 quadros). O corpo decidiu o lado de todas, conferido visualmente em 23 quadros, e o rótulo do detector concordou com o corpo em 100%. Configuração de mão, ponto de articulação e proporções foram medidos, mas **nenhuma sugestão ELiS foi conferida contra uma escrita de referência**: falta a escrita ELiS validada dessas palavras.
+> **Status (2026-11-26):** funcionando no **Estúdio de Captura** (`/estudio.html`). Primeiro teste com mãos humanas: os 13 GIFs de cumprimentos do IFPR (44 mãos em 40 quadros). O corpo decidiu o lado de todas, conferido visualmente em 23 quadros, e o rótulo do detector concordou com o corpo em 100%. Primeira escrita de referência: **BONITO** (`tgçQÄ`). No quadro do IFPR com a mão na frente do rosto, a pipeline acertou polegar, dedos, palma e Local (`tgçQ`). Ainda é um sinal só; as referências ficam em `src/data/elisReferences.json`.
 
 ## 1. Para que serve
 
@@ -41,7 +41,7 @@ mídia ──► detecção ──► lado das mãos ──► limpeza ──►
    - cada dedo: MCP, PIP, DIP e abertura lateral;
    - deslocamento do punho, normalizado pela largura dos ombros.
 5. **Sugestão ELiS** (`classify.ts`): compara a mão com as poses canônicas do teclado e ranqueia polegar (6), dedos (5) e palma (6).
-6. **Ponto de articulação** (`location.ts`): monta âncoras de 23 Locais (mais o espaço neutro) a partir do esqueleto do corpo (olhos, boca, orelhas, ombros, quadril, braço e mão do outro lado) e mede a menor distância até as pontas dos dedos, o meio dos dedos e o centro da palma, em larguras de ombro. Acima de 0,22 a mão conta como espaço neutro. Ficam de fora os Locais que o esqueleto 2D não separa: 17 rosto, 26 lábio superior, 28 dentes, 37 braço inteiro, 39 axila, 40 braço, 44 perna, 46 dorso da mão e 48–50.
+6. **Ponto de articulação** (`location.ts`): monta âncoras de 23 Locais (mais o espaço neutro) a partir do esqueleto do corpo (olhos, boca, orelhas, ombros, quadril, braço e mão do outro lado) e mede a menor distância até as pontas dos dedos, o meio dos dedos e o centro da palma, em larguras de ombro. Acima de 0,22 a mão conta como espaço neutro. **Rosto (17)** entra quando o centro da palma fica a menos de 1,0 altura de rosto (olhos → boca) do nariz, ou seja, a palma cobre o rosto. O limiar foi tirado de BONITO (0,58) contra os 13 cumprimentos (no mínimo 1,72). Ficam de fora os Locais que o esqueleto 2D não separa: 26 lábio superior, 28 dentes, 37 braço inteiro, 39 axila, 40 braço, 44 perna, 46 dorso da mão e 48–50.
 7. **Proporções** (`proportions.ts`): cada falange dividida pelo comprimento da palma (punho → base do dedo médio), mediana de todas as mãos com score ≥ 0,8, comparada com a mão do rig em repouso.
 8. **Saídas** (`calibration.ts`, Estúdio): média de amostras de calibração; clipe com recorte, metadados e status de validação.
 
@@ -128,7 +128,7 @@ Os testes sintéticos compartilham as convenções do próprio solver. Só filma
 
 ## 8. Ainda não feito (próximas fatias)
 
-- **Conferir as sugestões contra escritas ELiS de referência.** Sem a escrita validada de cada palavra, não há como medir o acerto do classificador de configuração nem do ponto de articulação. Não use a própria sugestão como rótulo de calibração: o resultado seria circular.
+- **Mais escritas ELiS de referência** em `src/data/elisReferences.json` (hoje só BONITO). Com poucas referências não dá para medir o acerto de verdade nem ajustar limiares sem decorar os exemplos. Não use a própria sugestão como rótulo de calibração: o resultado seria circular.
 - **Aplicar o posicionamento ao teclado.** As posições de `articulation3DMap.ts` foram escolhidas para legibilidade (mão ao lado do ponto). Usar a posição medida exige decidir entre fidelidade e legibilidade, e ajustar por tipo de módulo (cabeça, tronco, membros, mão), só em x e y.
 - **Aplicar as proporções ao rig** (ver §9).
 - **Reproduzir clipes no teclado**, como animação das palavras do dicionário.
@@ -166,3 +166,13 @@ Em 2D o rig fica perto do medido, com a falange da base claramente a mais longa,
 - **A palma do rig parece 8–15% larga demais** (0,63 contra 0,55–0,58 em 2D). Vale confirmar com mais quadros e mais pessoas.
 - **O polegar** fica fora do plano da imagem na maioria dos quadros, então nem 2D nem 3D dão uma medida confiável aqui.
 - Para medir proporções, a próxima versão deve usar os pontos 2D só em quadros com a palma de frente para a câmera e os dedos esticados, de várias pessoas (gravações da monitora).
+
+## 10. Escritas de referência
+
+A ordem da escrita ELiS é fixa: configuração de dedos (polegar e demais dedos), orientação da palma, ponto de articulação e movimento. O movimento pode faltar. É a mesma ordem das 5 etapas do teclado.
+
+| Palavra | ELiS | Polegar | Dedos | Palma | Local | Movimento | Resultado no IFPR |
+|---|---|---|---|---|---|---|---|
+| BONITO | `tgçQÄ` | `t` horizontal | `g` estendidos | `ç` para trás | `Q` rosto | `Ä` (no mapa: tamborilar de dedos) | Quadro #1 (palma na frente do rosto): `t` 96%, `g` 60%, `ç` 99%, Rosto 26% (1º lugar). Movimento não é medido |
+
+No GIF do IFPR, a mão de BONITO fecha descendo para o queixo. Pode ser outra variante do sinal, ou o rótulo de `Ä` no `elisMap.ts` pode não ser "tamborilar". Fica para a equipe da Letras conferir.

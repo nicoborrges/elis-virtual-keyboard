@@ -26,8 +26,20 @@ const POSE_EXTRA = {
   RIGHT_HIP: 24,
 } as const;
 
-/** Rosto genérico, lábio × dentes, palma × dorso etc. não se separam no esqueleto 2D. */
-export const UNMEASURED_LOCATIONS = [17, 26, 28, 37, 39, 40, 44, 46, 48, 49, 50] as const;
+/** Lábio × dentes, palma × dorso etc. não se separam no esqueleto 2D. */
+export const UNMEASURED_LOCATIONS = [26, 28, 37, 39, 40, 44, 46, 48, 49, 50] as const;
+
+/** Locais da cabeça (para a regra do Rosto). */
+const FACE_LOCATIONS = new Set([18, 19, 20, 21, 22, 23, 24, 25, 27, 29, 30, 31]);
+
+/**
+ * Rosto (17) é a mão cobrindo o rosto, sem um ponto específico. Vale quando o centro
+ * da palma fica a menos de `ROSTO_PALM_TO_NOSE` alturas de rosto (olhos → boca) do
+ * nariz. Calibrado com BONITO (IFPR, quadro com a palma na frente do rosto: 0,58)
+ * contra os 13 cumprimentos do IFPR (mínimo 1,72). Uma única referência: revisar
+ * com mais sinais escritos com Rosto.
+ */
+export const ROSTO_PALM_TO_NOSE = 1.0;
 
 /** Distância (largura dos ombros) a partir da qual a mão conta como no espaço neutro. */
 export const NEUTRAL_DISTANCE = 0.22;
@@ -185,6 +197,16 @@ export function measureLocation(
   }
   const palm = palmCenter(pts);
   scored.push({ id: 33, distance: NEUTRAL_DISTANCE, contact: { i: -1, p: palm } });
+
+  // Rosto: a palma cobre o rosto. Entra à frente dos pontos do rosto que ela cobre.
+  const P = (i: number) => body.toBody(frame.pose!.image[i]);
+  const eyes = mid(P(POSE_LM.LEFT_EYE), P(POSE_LM.RIGHT_EYE));
+  const mouth = mid(P(POSE_LM.MOUTH_LEFT), P(POSE_LM.MOUTH_RIGHT));
+  const faceHeight = dist(eyes, mouth);
+  if (faceHeight > 1e-6 && dist(palm, P(POSE_LM.NOSE)) / faceHeight < ROSTO_PALM_TO_NOSE) {
+    const nearestFace = Math.min(...scored.filter((s) => FACE_LOCATIONS.has(s.id)).map((s) => s.distance));
+    scored.push({ id: 17, distance: nearestFace * 0.5, contact: { i: -1, p: palm } });
+  }
 
   const weights = scored.map((s) => Math.exp(-s.distance / TEMPERATURE));
   const total = weights.reduce((x, y) => x + y, 0) || 1;

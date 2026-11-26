@@ -1,0 +1,15 @@
+{
+  "schema": "acme.elisreferences",
+  "version": 1,
+  "description": "Escritas ELiS de referência para medir o acerto da pipeline de captura. Não é o dicionário do jogo: só entra no dicionário o que a equipe da Letras-UFG validar.",
+  "entries": [
+    {
+      "word": "bonito",
+      "elis": "tgçQÄ",
+      "parts": { "thumb": "t", "fingers": "g", "palm": "ç", "location": "Q", "movement": "Ä" },
+      "source": "Trecho de texto sobre a ELiS enviado pela dupla em 2026-11-26 (exemplo do sinal BONITO; referência bibliográfica a registrar)",
+      "reference_media": "IFPR Campus Umuarama, Libras GIFs, Adjetivos, Bonit@.gif (pode ser outra variante)",
+      "validatedByLetras": false
+    }
+  ]
+}
