@@ -52,7 +52,9 @@ O teclado é um **módulo à parte** (adaptador de entrada). O protótipo atual 
 **Plataforma e tecnologia**
 - **Jogo de navegador.** Substitui Android + Unity/Godot dos decks.
 - **Visão isométrica** (2.5D: mistura de 2D e 3D), **tela deitada (paisagem)**. O teclado protótipo ainda é vertical — vai precisar de layout paisagem.
-- **Roda online**: a ideia é reduzir a exigência de hardware do jogador e terceirizar a maior parte do custo computacional para o servidor (forma exata em aberto — ver §7).
+- **Roda online — servidor pesado, cliente leve**: o servidor cuida da lógica, do dicionário e da entrega das animações; o navegador só desenha cenas leves. **Não** é cloud streaming de vídeo.
+- **Login com conta Google.**
+- **Hospedagem: UFG** (viabilidade ainda sendo verificada). Sem preferência de stack de backend — propor opções compatíveis com a infra da UFG.
 - **Bibliotecas/engine ainda não definidas** — não assumir React + Three.js para o jogo só porque o protótipo usa. Propor opções com prós/contras antes de adotar.
 - **Desempenho e acessibilidade são prioridade sempre**: o projeto precisa rodar bem no maior número possível de dispositivos e pessoas. Considerar custo (bundle, draw calls, memória) em toda decisão.
 - **Sem som e sem vibração.** Todo feedback é **visual**.
@@ -62,11 +64,13 @@ O teclado é um **módulo à parte** (adaptador de entrada). O protótipo atual 
 
 **Gameplay e conteúdo**
 - **Sinais = palavras reais de Libras** escritas em ELiS; o significado vira efeito no mundo (ex.: "fogo" → fogo). Isso exige um **dicionário de dados** ELiS ↔ palavra ↔ efeito.
-- **Dicionário próprio:** não existe base digital ELiS ↔ Libras; **vamos criar a nossa**. Sem variações regionais.
+- **Dicionário próprio:** não existe base digital ELiS ↔ Libras; **vamos criar a nossa**. Sem variações regionais. Cadastro feito **diretamente pela dupla e pela monitora da Letras**. Começa como **arquivo no repo** (ex.: JSON em `src/data/`) e depois migra para o **banco de dados** — modelar já pensando nessa migração.
+- **Primeiros sinais:** critério e lista ainda não definidos.
 - **Progressão de conteúdo:** começar pelos sinais mais fáceis de ensinar e evoluir. O teclado ganhará dinamismo (mais visografemas por grupo, sinais compostos etc.) **conforme a necessidade** — não generalizar antes da hora.
 - **Grimório:** sim — um sinal entra na **primeira conjuração** bem-sucedida.
 - **Pista visual:** depende do puzzle (sem formato único).
 - **Quem performa o sinal na tela:** as **mãos 3D do painel do teclado** (como no protótipo).
+- **No jogo, o teclado abre a partir de um botão** (não fica sempre visível).
 - **Teclado = módulo à parte.** Muito provavelmente haverá uma **Câmara de Testes**: modo livre onde o jogador pratica ELiS e as mãos 3D animam **qualquer combinação** escrita (como hoje).
 - **Combate:** pode haver; a lógica de gameplay é passo futuro.
 - **Pilar "sem texto"**: meta do **jogo final**. No **protótipo atual o texto explicativo fica** (rótulos das etapas, Espaço, Tocar, Tabela, dicas). Não remover textos da UI sem pedido.
@@ -74,9 +78,11 @@ O teclado é um **módulo à parte** (adaptador de entrada). O protótipo atual 
 **Arte e animação**
 - Assets: **metade gerados por IA, metade assets livres de licença** (preferir CC0; registrar origem/licença de cada asset).
 - **Pipeline de IA está no escopo**: vai alimentar o 3D/animação dos sinais. Vídeos de referência gravados pela **monitora da Letras**. O rig procedural atual (NOTAS_MODELO_3D.md) equivale à contingência "poses-chave".
+- **Duas fontes de animação:** o **rig procedural** continua animando **qualquer combinação** (Câmara de Testes); **palavras do dicionário** usam as animações da **pipeline de IA**.
 
 **Pesquisa e projeto**
 - Telemetria de tempo/precisão: **muito provavelmente** sim.
+- Ética em pesquisa e LGPD: ver [docs/plano-etica-lgpd.md](docs/plano-etica-lgpd.md) — **submissão ao CEP é urgente** para os testes de mar/2027.
 - Validação linguística dos sinais: **equipe especializada da Letras-UFG**.
 - Prazo de conclusão: **agosto de 2027**. Equipe: **2 pessoas**, com fluxo de **branches e PRs** no Git.
 - **Cronograma válido: o do pitch** (início dez/2026).
@@ -127,20 +133,16 @@ Referência: artes conceituais dos decks (logo dourado, figura encapuzada com m�
 
 ## 7. Em aberto (decidir com o Nicolas)
 
-**Ainda indefinidos (rodadas anteriores)**
-- Escopo do 1º capítulo: ecossistema, nº de puzzles, vocabulário.
-- Validação do sinal num puzzle: match exato com a palavra do dicionário ou com tolerância? O que acontece num sinal errado?
-- Teclado sempre visível ou aberto sob demanda.
+**Ainda indefinidos**
+- Escopo do 1º capítulo e critério/lista dos primeiros sinais.
+- Validação do sinal num puzzle (match exato ou tolerância) e o que acontece num sinal errado.
 - Papel do Movimento (etapa 5) no "Conjurar".
 - Formato de saída da pipeline de IA para o navegador (ex.: glTF + clipes de animação).
 - Divisão de papéis entre os dois desenvolvedores.
+- Pendências do [plano de ética/LGPD](docs/plano-etica-lgpd.md) §7: pesquisador responsável, menores, nº/local dos testes, filmagem, login × código de sessão.
 
-**4ª rodada (2026-11-26)**
-- *"Roda online":* o servidor faz o trabalho pesado (lógica, dicionário, geração/serviço de animações) e o navegador só desenha cenas leves? Ou é *cloud streaming* (o jogo roda no servidor e o navegador recebe vídeo)?
-- *Servidor:* jogador precisa de conta/login ou joga anônimo? Preferência de stack (Node, Supabase, Firebase…)? Onde hospedar (infra da UFG, serviço gratuito) e qual orçamento?
-- *Pesquisa:* consentimento/LGPD e comitê de ética (CEP) para os testes com pessoas já estão no plano?
-- *Layout em paisagem:* teclado + mãos 3D como painel lateral fixo ao lado da cena isométrica? Que fração da tela?
-- *Fagulha:* como ela demonstra um sinal se quem performa são as mãos do teclado — o painel "toca" o sinal da fagulha, ou ela tem mãos próprias na cena?
-- *Dicionário próprio:* quem cadastra as palavras (vocês, a monitora)? Precisa de uma ferramenta de autoria (palavra + ELiS + vídeo + efeito)? Onde fica — no repo (JSON) ou no banco?
-- *Primeiros sinais:* qual o critério de "mais fácil" (cabe nos 5 slots? uma mão só? sem movimento)? Já há candidatos (ex.: flor, fogo, água, árvore)?
-- *Animação na Câmara de Testes:* para qualquer combinação, o rig procedural continua sendo o motor? E as palavras do dicionário usam a animação da pipeline de IA?
+**5ª rodada (2026-11-26)**
+- *Fagulha (prólogo do deck de jul/2026):* o espírito-guia que demonstra o 1º sinal ainda faz parte da história? Se sim, como a demonstração aparece se quem performa sinais são as mãos do teclado?
+- *Teclado por botão:* ao abrir, cobre a cena (jogo pausa) ou abre como painel lateral com a cena visível para ver o efeito?
+- *Hospedagem UFG:* quem é o contato (ex.: centro de computação da UFG)? Há plano B se não sair a tempo dos testes de mar/2027?
+- *Dicionário:* campos mínimos de uma entrada (palavra em PT, sequência ELiS, vídeo de referência, animação, efeito no jogo, capítulo, dificuldade)?
