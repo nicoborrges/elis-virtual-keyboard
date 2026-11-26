@@ -5,7 +5,18 @@ import { suggestForHand } from '../classify';
 import { addCalibrationSample, emptyCalibration } from '../calibration';
 import { fillGaps, smoothCapture } from '../filter';
 import { anglesFromPoseTargets, segmentDirections } from '../rigKinematics';
-import { assignHandSides, solveCapture, solveHandPose, POSE_LM } from '../solver';
+import {
+  assignHandSides,
+  mirrorImagePoint,
+  mirrorWorldPoint,
+  POSE_LM,
+  solveCapture,
+  solveHandPose,
+  stabilizeSides,
+  suspectSides,
+  swapHandSides,
+  unmirrorDetection,
+} from '../solver';
 import { syntheticHand } from '../synthetic';
 import type { CapturedPose, HandSide, LandmarkCapture, SolvedHand, Vec3 } from '../types';
 import realFixture from './fixtures/mediapipe-rig-right-tgl.json';
@@ -103,26 +114,45 @@ describe('lado das mãos e deslocamento', () => {
 
   it('usa o punho do corpo mais próximo mesmo com rótulo trocado', () => {
     const { hand } = synthFromElis('right', 1, 'y', 'g', 'l');
-    // Rótulo "Right" numa imagem não espelhada = mão esquerda (errado de propósito aqui)
-    const raw = { image: hand.image.map((p): Vec3 => [p[0] - 0.2, p[1], p[2]]), world: hand.world, label: 'Right', score: 0.9 };
+    // Rótulo errado de propósito: o corpo deve prevalecer
+    const raw = { image: hand.image.map((p): Vec3 => [p[0] - 0.2, p[1], p[2]]), world: hand.world, label: 'Left', score: 0.9 };
     const pose = poseWith([raw.image[0][0], raw.image[0][1], 0], [0.8, 0.6, 0]);
     const [assigned] = assignHandSides([raw], pose, size);
     expect(assigned.side).toBe('right');
     expect(assigned.sideSource).toBe('pose');
   });
 
-  it('sem corpo, usa o rótulo do detector na convenção selfie observada', () => {
+  it('sem corpo, usa o rótulo do detector (documentação: mão do sujeito)', () => {
     const { hand } = synthFromElis('right', 1, 'y', 'g', 'l');
-    const [a] = assignHandSides([{ image: hand.image, world: hand.world, label: 'Left', score: 0.9 }], undefined, size);
+    const [a] = assignHandSides([{ image: hand.image, world: hand.world, label: 'Right', score: 0.9 }], undefined, size);
     expect(a.side).toBe('right');
-    const [b] = assignHandSides([{ image: hand.image, world: hand.world, label: 'Left', score: 0.9 }], undefined, size, true);
+    const [b] = assignHandSides([{ image: hand.image, world: hand.world, label: 'Right', score: 0.9 }], undefined, size, true);
     expect(b.side).toBe('left');
   });
 
-  it('saída REAL do MediaPipe (render do rig: mão direita, t g l) é lida corretamente', () => {
-    const raw = { image: realFixture.image as Vec3[], world: realFixture.world as Vec3[], label: realFixture.label, score: realFixture.score };
-    const [hand] = assignHandSides([raw], undefined, realFixture.source);
-    expect(hand.side).toBe('right');
+  it('mídia espelhada (selfie) é desespelhada e lida igual à original, inclusive com corpo', () => {
+    const { hand } = synthFromElis('right', 1, 'y', 'g', 'z');
+    const selfie = { image: hand.image.map(mirrorImagePoint), world: hand.world.map(mirrorWorldPoint), label: 'Left', score: 0.9 };
+    const poseSelfie = poseWith([0.8, 0.6, 0], [selfie.image[0][0], selfie.image[0][1], 0]);
+    for (const pose of [undefined, poseSelfie]) {
+      const un = unmirrorDetection([selfie], pose);
+      const [h] = assignHandSides(un.hands, un.pose, size, true);
+      expect(h.side).toBe('right');
+      expect(suggestForHand({ ...solveHandPose(h), offset: [0, 0, 0] }, 1).palm[0].char).toBe('z');
+    }
+  });
+
+  it('avisa lado suspeito quando a flexão só faz sentido com a mão trocada', () => {
+    const { hand } = synthFromElis('right', 1, 'e', 'u', 'l');
+    const cap = captureOf([{ t: 0, hands: [hand] }]);
+    expect(suspectSides(cap).suspect).toBe(0);
+    expect(suspectSides(swapHandSides(cap)).suspect).toBe(1);
+  });
+
+  it('saída REAL do MediaPipe (render do rig: mão direita, t g l) é lida corretamente com o lado certo', () => {
+    // O rótulo deste render veio "Left"; palma e dorso do manequim são ambíguos,
+    // então o lado é fixado aqui — o teste cobre o solver, não a convenção do rótulo.
+    const hand = { side: 'right' as const, sideSource: 'manual' as const, score: realFixture.score, image: realFixture.image as Vec3[], world: realFixture.world as Vec3[] };
     const sug = suggestForHand({ ...solveHandPose(hand), offset: [0, 0, 0] }, 1);
     expect(sug.thumb[0].char).toBe('t');
     expect(sug.fingers[0].char).toBe('g');
@@ -144,6 +174,25 @@ describe('lado das mãos e deslocamento', () => {
     const b = { ...a, image: a.image.map((p): Vec3 => [p[0] - 0.1, p[1], p[2]]) };
     const frames = solveCapture(captureOf([{ t: 0, hands: [a] }, { t: 0.1, hands: [b] }]));
     expect(frames[1].dominant!.offset[0]).toBeGreaterThan(0);
+  });
+
+  it('estabiliza o lado quando o rótulo oscila entre quadros (vídeo)', () => {
+    const r = synthFromElis('right', 1, 'y', 'g', 'l').hand;
+    const frames = Array.from({ length: 9 }, (_, i) => ({
+      t: i / 30,
+      hands: [{ ...r, sideSource: 'handedness' as const, side: (i % 3 === 0 ? 'left' : 'right') as HandSide }],
+    }));
+    const fixed = stabilizeSides(captureOf(frames));
+    expect(fixed.frames.every((f) => f.hands[0].side === 'right')).toBe(true);
+  });
+
+  it('duas mãos com o mesmo rótulo o vídeo todo: a da esquerda da imagem vira a direita', () => {
+    const r = synthFromElis('right', 1, 'y', 'g', 'l').hand;
+    const at = (dx: number) => ({ ...r, sideSource: 'handedness' as const, side: 'left' as HandSide, image: r.image.map((p): Vec3 => [p[0] + dx, p[1], p[2]]) });
+    const frames = Array.from({ length: 5 }, (_, i) => ({ t: i / 30, hands: [at(0.25), at(-0.25)] }));
+    const fixed = stabilizeSides(captureOf(frames));
+    expect(fixed.frames[0].hands[1].side).toBe('right');
+    expect(fixed.frames[0].hands[0].side).toBe('left');
   });
 
   it('sinalizante canhoto: a mão esquerda vira a dominante do rig', () => {

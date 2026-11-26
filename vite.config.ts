@@ -41,7 +41,9 @@ function pipelineSavePlugin(): Plugin {
               return reply(400, { ok: false, error: 'Destino ou formato inválido' })
             }
             await mkdir(dirname(target), { recursive: true })
-            await writeFile(target, JSON.stringify(data, null, 2) + '\n', 'utf8')
+            // Calibração fica legível para revisão em PR; clipes ficam compactos (tamanho)
+            const text = kind === 'calibration' ? JSON.stringify(data, null, 2) : JSON.stringify(data)
+            await writeFile(target, text + '\n', 'utf8')
             reply(200, { ok: true, path: relative(root, target).replaceAll('\\', '/') })
           } catch (err) {
             reply(400, { ok: false, error: String(err) })

@@ -12,7 +12,7 @@ import {
   type HandLandmarkerResult,
   type PoseLandmarkerResult,
 } from '@mediapipe/tasks-vision';
-import { assignHandSides, type RawHandDetection } from '../pipeline/solver';
+import { assignHandSides, unmirrorDetection, type RawHandDetection } from '../pipeline/solver';
 import type { CaptureFrame, CapturedPose, CaptureSource, LandmarkCapture, Vec3 } from '../pipeline/types';
 
 export const MEDIAPIPE_VERSION = '1.2.3';
@@ -97,12 +97,13 @@ export class CaptureDetector {
         visibility: pr.landmarks[0].map((l) => l.visibility ?? 0),
       };
     }
-    const raw: RawHandDetection[] = hr.landmarks.map((lms, i) => ({
+    let raw: RawHandDetection[] = hr.landmarks.map((lms, i) => ({
       image: lms.map(toVec3),
       world: hr.worldLandmarks[i].map(toVec3),
       label: hr.handedness[i]?.[0]?.categoryName ?? '',
       score: hr.handedness[i]?.[0]?.score ?? 0,
     }));
+    if (mirroredInput) ({ hands: raw, pose } = unmirrorDetection(raw, pose));
     return { t, hands: assignHandSides(raw, pose, size, mirroredInput), pose };
   }
 
@@ -111,7 +112,11 @@ export class CaptureDetector {
     const size = { width: image.naturalWidth, height: image.naturalHeight };
     const hr = this.hands.detect(image);
     const pr = opts.usePose && this.pose ? this.pose.detect(image) : null;
-    return wrap({ kind: 'image', name, ...size }, [this.toFrame(0, hr, pr, size, opts.mirroredInput)], this.hasPose && opts.usePose);
+    return wrap(
+      { kind: 'image', name, ...size, mirrored: opts.mirroredInput },
+      [this.toFrame(0, hr, pr, size, opts.mirroredInput)],
+      this.hasPose && opts.usePose
+    );
   }
 
   async detectVideo(
@@ -121,7 +126,7 @@ export class CaptureDetector {
   ): Promise<LandmarkCapture> {
     await this.setMode('VIDEO');
     const size = { width: video.videoWidth, height: video.videoHeight };
-    const duration = video.duration;
+    const duration = await finiteDuration(video);
     const step = 1 / opts.fps;
     const frames: CaptureFrame[] = [];
     video.pause();
@@ -138,7 +143,11 @@ export class CaptureDetector {
       opts.onProgress?.(Math.min(1, t / duration));
     }
 
-    return wrap({ kind: 'video', name, ...size, fps: opts.fps, duration }, frames, this.hasPose && opts.usePose);
+    return wrap(
+      { kind: 'video', name, ...size, fps: opts.fps, duration, mirrored: opts.mirroredInput },
+      frames,
+      this.hasPose && opts.usePose
+    );
   }
 
   close() {
@@ -156,6 +165,29 @@ function wrap(source: CaptureSource, frames: CaptureFrame[], usedPose: boolean):
     detector: `mediapipe-tasks-vision@${MEDIAPIPE_VERSION} hand_landmarker${usedPose ? ' + pose_landmarker_full' : ''}`,
     frames,
   };
+}
+
+/**
+ * Vídeos gravados no navegador (MediaRecorder/webcam) costumam informar duração
+ * Infinity até serem percorridos. Força o cálculo buscando um tempo enorme.
+ */
+export async function finiteDuration(video: HTMLVideoElement): Promise<number> {
+  if (Number.isFinite(video.duration) && video.duration > 0) return video.duration;
+  await new Promise<void>((resolve) => {
+    const done = () => {
+      if (!Number.isFinite(video.duration)) return;
+      video.removeEventListener('durationchange', done);
+      video.removeEventListener('seeked', done);
+      resolve();
+    };
+    video.addEventListener('durationchange', done);
+    video.addEventListener('seeked', done);
+    video.currentTime = 1e7;
+  });
+  const d = video.duration;
+  await seek(video, 0);
+  if (!Number.isFinite(d) || d <= 0) throw new Error('Não foi possível obter a duração do vídeo.');
+  return d;
 }
 
 function seek(video: HTMLVideoElement, t: number): Promise<void> {

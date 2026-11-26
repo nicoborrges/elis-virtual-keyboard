@@ -16,8 +16,8 @@ export type HandSide = 'right' | 'left';
 
 export interface CapturedHand {
   side: HandSide;
-  /** Como o lado foi decidido: pelo esqueleto do corpo (mais confiável) ou pelo classificador de mão. */
-  sideSource: 'pose' | 'handedness';
+  /** Como o lado foi decidido: esqueleto do corpo (mais confiável), rótulo do detector ou troca manual. */
+  sideSource: 'pose' | 'handedness' | 'manual';
   /** Lado segundo o rótulo do detector (para conferir a convenção de espelhamento). */
   labelSide?: HandSide;
   score: number;
@@ -47,6 +47,8 @@ export interface CaptureSource {
   height: number;
   fps?: number;
   duration?: number;
+  /** A mídia original era espelhada (selfie). Os landmarks já estão desespelhados. */
+  mirrored?: boolean;
 }
 
 export interface LandmarkCapture {

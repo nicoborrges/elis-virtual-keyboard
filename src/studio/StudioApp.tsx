@@ -1,14 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Download, FileJson, Loader2, Pause, Play, Save, Trash2, Upload } from 'lucide-react';
+import { ArrowLeft, ArrowLeftRight, Download, FileJson, Loader2, Pause, Play, Save, Trash2, Upload } from 'lucide-react';
 import rigCalibrationData from '../data/rigCalibration.json';
 import { ELIS_VISOGRAFEMAS } from '../data/elisMap';
 import { addCalibrationSample, removeCalibration, roundDeep, type CalibrationStep } from '../pipeline/calibration';
 import { suggestForHand, type Suggestion } from '../pipeline/classify';
 import { fillGaps, smoothCapture } from '../pipeline/filter';
-import { frameAt, labelAgreement, solveCapture } from '../pipeline/solver';
+import { frameAt, labelAgreement, solveCapture, stabilizeSides, suspectSides, swapHandSides } from '../pipeline/solver';
 import type { HandSide, LandmarkCapture, RigCalibration, SignClip, SolvedHand } from '../pipeline/types';
 import { cn } from '../utils/cn';
-import { CaptureDetector, HAND_CONNECTIONS } from './detector';
+import { CaptureDetector, finiteDuration, HAND_CONNECTIONS } from './detector';
 import { RigPreview } from './RigPreview';
 
 type Media = { kind: 'image' | 'video'; url: string; name: string };
@@ -26,8 +26,8 @@ const slugify = (s: string) =>
     .replace(/^-+|-+$/g, '')
     .slice(0, 64);
 
-function downloadJson(filename: string, data: unknown) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+function downloadJson(filename: string, data: unknown, pretty = false) {
+  const blob = new Blob([pretty ? JSON.stringify(data, null, 2) : JSON.stringify(data)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -51,6 +51,24 @@ async function saveToRepo(kind: 'clip' | 'calibration', name: string, data: unkn
     downloadJson(`${name}.json`, data);
     return 'Servidor de dev indisponível — arquivo baixado. Copie-o para src/data/.';
   }
+}
+
+/** Resumo da extração + verificações de lado (rótulo × corpo, flexão impossível, sem corpo). */
+function describeCapture(capture: LandmarkCapture): string {
+  const withHands = capture.frames.filter((f) => f.hands.length > 0).length;
+  if (!withHands) return 'Nenhuma mão detectada. Tente mais luz, fundo liso e mãos inteiras no quadro.';
+  const parts = [`${withHands}/${capture.frames.length} quadro(s) com mãos detectadas. Confira: “D” deve marcar a mão direita de quem sinaliza.`];
+  const agreement = labelAgreement(capture);
+  if (agreement.total) {
+    parts.push(`Rótulo do detector × corpo: ${Math.round((100 * agreement.agree) / agreement.total)}% de concordância.`);
+  } else {
+    parts.push('Sem corpo no quadro: o lado veio só do rótulo do detector — inclua os ombros nas fotos de calibração.');
+  }
+  const suspect = suspectSides(capture);
+  if (suspect.suspect > 0) {
+    parts.push(`⚠ ${suspect.suspect} mão(s) com dedos dobrando para trás — o lado pode estar trocado (use “Trocar D↔E”).`);
+  }
+  return parts.join(' ');
 }
 
 export function StudioApp() {
@@ -154,24 +172,13 @@ export function StudioApp() {
       }
       let clean = raw;
       if (raw.source.kind === 'video') {
+        clean = stabilizeSides(clean);
         clean = fillGaps(clean, 4);
         if (smoothing) clean = smoothCapture(clean);
       }
       setCapture(clean);
-      const withHands = clean.frames.filter((f) => f.hands.length > 0).length;
-      const agreement = labelAgreement(clean);
-      const agreementText = agreement.total
-        ? ` Rótulo do detector × corpo: ${Math.round((100 * agreement.agree) / agreement.total)}% de concordância${
-            agreement.agree / agreement.total < 0.5 ? ' — confira “Mídia espelhada”.' : '.'
-          }`
-        : '';
+      setStatus({ kind: 'ok', text: describeCapture(clean) });
       setClipForm((f) => ({ ...f, start: 0, end: clean.source.duration ?? 0 }));
-      setStatus({
-        kind: withHands ? 'ok' : 'error',
-        text: withHands
-          ? `${withHands}/${clean.frames.length} quadro(s) com mãos detectadas. Confira: “D” deve marcar a mão direita de quem sinaliza.${agreementText}`
-          : 'Nenhuma mão detectada. Tente mais luz, fundo liso e mãos inteiras no quadro.',
-      });
       if (videoRef.current) videoRef.current.currentTime = 0;
       setTime(0);
     } catch (err) {
@@ -181,6 +188,13 @@ export function StudioApp() {
       abortRef.current = null;
     }
   }, [media, ensureDetector, usePose, mirroredInput, fps, smoothing]);
+
+  const swapSides = () => {
+    if (!capture) return;
+    const swapped = swapHandSides(capture);
+    setCapture(swapped);
+    setStatus({ kind: 'ok', text: `Lados trocados manualmente. ${describeCapture(swapped)}` });
+  };
 
   useEffect(() => () => detectorRef.current?.close(), []);
 
@@ -235,13 +249,15 @@ export function StudioApp() {
     ctx.clearRect(0, 0, w, h);
     const f = currentCaptureFrame;
     if (!f) return;
+    // Landmarks ficam desespelhados; a mídia exibida continua espelhada
+    const mx = capture?.source.mirrored ? (x: number) => (1 - x) * w : (x: number) => x * w;
 
     if (f.pose) {
       ctx.fillStyle = 'rgba(201,195,185,0.8)';
       f.pose.image.slice(0, 25).forEach((p, i) => {
         if (f.pose!.visibility[i] < 0.5) return;
         ctx.beginPath();
-        ctx.arc(p[0] * w, p[1] * h, 2.5, 0, Math.PI * 2);
+        ctx.arc(mx(p[0]), p[1] * h, 2.5, 0, Math.PI * 2);
         ctx.fill();
       });
     }
@@ -253,19 +269,22 @@ export function StudioApp() {
         const a = hand.image[c.start];
         const b = hand.image[c.end];
         ctx.beginPath();
-        ctx.moveTo(a[0] * w, a[1] * h);
-        ctx.lineTo(b[0] * w, b[1] * h);
+        ctx.moveTo(mx(a[0]), a[1] * h);
+        ctx.lineTo(mx(b[0]), b[1] * h);
         ctx.stroke();
       }
       ctx.fillStyle = color;
       ctx.font = '600 12px Inter, sans-serif';
       const wr = hand.image[0];
-      ctx.fillText(hand.side === 'right' ? 'D' : 'E', wr[0] * w + 6, wr[1] * h + 14);
+      ctx.fillText(hand.side === 'right' ? 'D' : 'E', mx(wr[0]) + 6, wr[1] * h + 14);
     }
-  }, [currentCaptureFrame, media]);
+  }, [currentCaptureFrame, media, capture]);
 
   // ---------------------------------------------------------- calibração
   const calTargetHand = currentFrame?.[calHand];
+  const calCaptureHand = currentCaptureFrame?.hands.find(
+    (h) => (h.side === dominantHand) === (calHand === 'dominant')
+  );
   const calSign: 1 | -1 = calHand === 'dominant' ? 1 : -1;
   const calSuggestion = suggestions[calHand]?.[calStep][0]?.char ?? null;
   const effectiveCalChar = calChar ?? calSuggestion;
@@ -330,7 +349,7 @@ export function StudioApp() {
         </div>
         <p className="text-xs text-ink-400 max-w-xl">
           Fotos calibram as poses dos visografemas; vídeos viram clipes de sinais. Tudo é processado neste navegador —
-          a mídia não é enviada a nenhum servidor e os arquivos gerados guardam só números.
+          a mídia não é enviada a nenhum servidor e os arquivos gerados não contêm imagens (só pontos e metadados).
         </p>
         <a href="/" className="flex items-center gap-1.5 text-xs text-ink-300 hover:text-gold-300">
           <ArrowLeft className="w-3.5 h-3.5" /> Teclado
@@ -379,7 +398,10 @@ export function StudioApp() {
                     if (!playing) setTime(e.currentTarget.currentTime);
                   }}
                   onEnded={() => setPlaying(false)}
-                  onLoadedMetadata={(e) => setVideoDuration(e.currentTarget.duration)}
+                  onLoadedMetadata={(e) => {
+                    const v = e.currentTarget;
+                    void finiteDuration(v).then(setVideoDuration).catch(() => setVideoDuration(0));
+                  }}
                 />
               )}
               <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 w-full h-full" />
@@ -462,6 +484,16 @@ export function StudioApp() {
                   className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-ink-800 hover:bg-ink-700 text-xs text-ink-200"
                 >
                   <FileJson className="w-3.5 h-3.5" /> Baixar landmarks
+                </button>
+              )}
+              {capture && (
+                <button
+                  type="button"
+                  onClick={swapSides}
+                  title="Use se “D” não estiver na mão direita de quem sinaliza"
+                  className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-ink-800 hover:bg-ink-700 text-xs text-ink-200"
+                >
+                  <ArrowLeftRight className="w-3.5 h-3.5" /> Trocar D↔E
                 </button>
               )}
             </div>
@@ -567,6 +599,9 @@ export function StudioApp() {
                 <Save className="w-3.5 h-3.5" /> Salvar no repositório
               </button>
               {!calTargetHand && <span className="text-[11px] text-ink-500">Sem essa mão no quadro atual.</span>}
+              {calTargetHand && calCaptureHand?.sideSource === 'handedness' && (
+                <span className="text-[11px] text-wine-300">Sem ombros no quadro: confira D/E antes de calibrar.</span>
+              )}
             </div>
             {calEntries.length > 0 && (
               <ul className="flex flex-wrap gap-1.5">
@@ -604,7 +639,7 @@ export function StudioApp() {
                 </div>
               </Field>
               <Field label="Autor / fonte">
-                <input value={clipForm.author} onChange={(e) => setClipForm({ ...clipForm, author: e.target.value })} className="input" placeholder="ex.: monitora Letras-UFG" />
+                <input value={clipForm.author} onChange={(e) => setClipForm({ ...clipForm, author: e.target.value })} className="input" placeholder="função, não nome (ex.: monitora Letras-UFG)" />
               </Field>
               <Field label="Observações">
                 <input value={clipForm.notes} onChange={(e) => setClipForm({ ...clipForm, notes: e.target.value })} className="input" />

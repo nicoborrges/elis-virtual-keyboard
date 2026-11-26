@@ -207,10 +207,11 @@ export interface RawHandDetection {
   image: Vec3[];
   world: Vec3[];
   /**
-   * Rótulo do MediaPipe ("Left"/"Right"). Observado na v1.2.3: segue a convenção
-   * de imagem espelhada (selfie) — numa imagem NÃO espelhada, "Left" é a mão
-   * direita de quem sinaliza (fixture src/pipeline/__tests__/fixtures/). A
-   * documentação da biblioteca diz o contrário; confirmar com filmagem real.
+   * Rótulo do MediaPipe ("Left"/"Right") sobre a imagem como foi entregue ao
+   * detector. Pela documentação da v1.2.3 é a mão do sujeito, e imagem espelhada
+   * inverte. NÃO confirmado com filmagem real (num render do rig o rótulo saiu
+   * invertido, mas palma e dorso do manequim são ambíguos). Por isso o corpo tem
+   * prioridade, o Estúdio mostra a concordância e permite trocar D↔E.
    */
   label: string;
   score: number;
@@ -222,7 +223,10 @@ const dist2 = (a: Vec3, b: Vec3, w: number, h: number) =>
 /**
  * Decide o lado anatômico de cada mão detectada. Com esqueleto do corpo, usa o
  * punho do corpo mais próximo (robusto); sem ele, usa o rótulo do detector.
- * `mirroredInput`: true se a imagem já vier espelhada (câmera frontal "selfie").
+ *
+ * As coordenadas de `hands` e `pose` já devem estar NÃO espelhadas (ver
+ * `unmirrorDetection`). `mirroredInput` só diz como interpretar o rótulo, que se
+ * refere à imagem original entregue ao detector.
  */
 export function assignHandSides(
   hands: RawHandDetection[],
@@ -255,8 +259,8 @@ export function assignHandSides(
 
   let sides = hands.map((h) => labelSide(h.label, mirroredInput));
   if (hands.length >= 2 && sides[0] === sides[1]) {
-    // Rótulos repetidos: em imagem não espelhada, a mão direita aparece à esquerda da imagem
-    const rightIsFirst = (hands[0].image[0][0] < hands[1].image[0][0]) !== mirroredInput;
+    // Rótulos repetidos: em coordenadas não espelhadas, a mão direita fica à esquerda da imagem
+    const rightIsFirst = hands[0].image[0][0] < hands[1].image[0][0];
     sides = rightIsFirst ? ['right', 'left'] : ['left', 'right'];
   }
   return hands.slice(0, 2).map((h, i) => toCaptured(h, sides[i], 'handedness', mirroredInput));
@@ -265,7 +269,7 @@ export function assignHandSides(
 /** Lado anatômico segundo o rótulo do detector (ver nota em RawHandDetection.label). */
 export function labelSide(label: string, mirroredInput: boolean): HandSide {
   const saysRight = label.toLowerCase().startsWith('right');
-  return saysRight === mirroredInput ? 'right' : 'left';
+  return saysRight !== mirroredInput ? 'right' : 'left';
 }
 
 function toCaptured(h: RawHandDetection, side: HandSide, sideSource: CapturedHand['sideSource'], mirroredInput: boolean): CapturedHand {
@@ -293,9 +297,32 @@ export function labelAgreement(capture: LandmarkCapture): { agree: number; total
 // Espelhamento (sinalizantes canhotos são processados como destros espelhados)
 // ---------------------------------------------------------------------------
 
+export const mirrorImagePoint = (p: Vec3): Vec3 => [1 - p[0], p[1], p[2]];
+export const mirrorWorldPoint = (p: Vec3): Vec3 => [-p[0], p[1], p[2]];
+
+/** Espelha o esqueleto do corpo: x da imagem e troca esquerda ↔ direita. */
+export function mirrorPose(p: CapturedPose): CapturedPose {
+  const image = p.image.map(mirrorImagePoint);
+  const visibility = [...p.visibility];
+  for (const [a, b] of POSE_MIRROR_PAIRS) {
+    [image[a], image[b]] = [image[b], image[a]];
+    [visibility[a], visibility[b]] = [visibility[b], visibility[a]];
+  }
+  return { image, visibility };
+}
+
+/**
+ * Mídia espelhada (selfie): devolve as coordenadas como se a câmera não
+ * espelhasse, para que toda a pipeline trabalhe num único referencial.
+ */
+export function unmirrorDetection(hands: RawHandDetection[], pose: CapturedPose | undefined) {
+  return {
+    hands: hands.map((h) => ({ ...h, image: h.image.map(mirrorImagePoint), world: h.world.map(mirrorWorldPoint) })),
+    pose: pose ? mirrorPose(pose) : undefined,
+  };
+}
+
 export function mirrorCapture(capture: LandmarkCapture): LandmarkCapture {
-  const mirrorImage = (p: Vec3): Vec3 => [1 - p[0], p[1], p[2]];
-  const mirrorWorld = (p: Vec3): Vec3 => [-p[0], p[1], p[2]];
   return {
     ...capture,
     frames: capture.frames.map((f) => ({
@@ -303,22 +330,116 @@ export function mirrorCapture(capture: LandmarkCapture): LandmarkCapture {
       hands: f.hands.map((h) => ({
         ...h,
         side: h.side === 'right' ? 'left' : 'right',
-        image: h.image.map(mirrorImage),
-        world: h.world.map(mirrorWorld),
+        image: h.image.map(mirrorImagePoint),
+        world: h.world.map(mirrorWorldPoint),
       })),
       pose: f.pose ? mirrorPose(f.pose) : undefined,
     })),
   };
+}
 
-  function mirrorPose(p: CapturedPose): CapturedPose {
-    const image = p.image.map(mirrorImage);
-    const visibility = [...p.visibility];
-    for (const [a, b] of POSE_MIRROR_PAIRS) {
-      [image[a], image[b]] = [image[b], image[a]];
-      [visibility[a], visibility[b]] = [visibility[b], visibility[a]];
+/** Troca manualmente D ↔ E em todos os quadros (quando a detecção errou o lado). */
+export function swapHandSides(capture: LandmarkCapture): LandmarkCapture {
+  return {
+    ...capture,
+    frames: capture.frames.map((f) => ({
+      ...f,
+      hands: f.hands.map((h) => ({ ...h, side: h.side === 'right' ? 'left' : 'right', sideSource: 'manual' })),
+    })),
+  };
+}
+
+/**
+ * Penalidade anatômica: dedos dobrando para trás nas articulações PIP/DIP (além
+ * de ~11°). Com o lado da mão trocado, a flexão inverte de sinal e a penalidade
+ * dispara — serve para avisar lado suspeito.
+ */
+export function flexionPenalty(hand: Omit<SolvedHand, 'offset'>): number {
+  return hand.fingers.reduce((acc, f) => acc + Math.max(0, -f.pip - 0.2) + Math.max(0, -f.dip - 0.2), 0);
+}
+
+/** Quadros em que a mão ficaria bem mais plausível com o lado trocado. */
+export function suspectSides(capture: LandmarkCapture): { suspect: number; total: number } {
+  let suspect = 0;
+  let total = 0;
+  for (const f of capture.frames) {
+    for (const h of f.hands) {
+      total++;
+      const asIs = flexionPenalty(solveHandPose(h));
+      const swapped = flexionPenalty(solveHandPose({ ...h, side: h.side === 'right' ? 'left' : 'right' }));
+      if (asIs > 0.6 && swapped < asIs * 0.4) suspect++;
     }
-    return { image, visibility };
   }
+  return { suspect, total };
+}
+
+/**
+ * Estabiliza o lado de cada mão ao longo de um vídeo: rastreia cada mão pela
+ * posição do punho entre quadros e decide o lado de cada trilha por votação
+ * (corpo pesa mais que o rótulo; troca manual vence). Evita que o rótulo do
+ * detector oscile D/E no meio do sinal.
+ */
+export function stabilizeSides(capture: LandmarkCapture): LandmarkCapture {
+  if (capture.frames.length < 2) return capture;
+  const { width, height } = capture.source;
+  const diag = Math.hypot(width, height);
+  type Track = { lastX: number; lastY: number; lastT: number; votes: Record<HandSide, number>; xs: number[]; members: [number, number][] };
+  const tracks: Track[] = [];
+  const weight = (h: CapturedHand) => (h.sideSource === 'manual' ? 100 : h.sideSource === 'pose' ? 3 : Math.max(0.1, h.score));
+
+  capture.frames.forEach((f, fi) => {
+    const taken = new Set<Track>();
+    const order = f.hands.map((h, hi) => ({ h, hi }));
+    for (const { h, hi } of order) {
+      const x = h.image[HAND_LM.WRIST][0] * width;
+      const y = h.image[HAND_LM.WRIST][1] * height;
+      let best: Track | undefined;
+      let bestD = Infinity;
+      for (const t of tracks) {
+        if (taken.has(t) || f.t - t.lastT > 0.5) continue;
+        const d = Math.hypot(x - t.lastX, y - t.lastY) / diag;
+        if (d < 0.2 && d < bestD) {
+          best = t;
+          bestD = d;
+        }
+      }
+      if (!best) {
+        best = { lastX: x, lastY: y, lastT: f.t, votes: { right: 0, left: 0 }, xs: [], members: [] };
+        tracks.push(best);
+      }
+      taken.add(best);
+      best.lastX = x;
+      best.lastY = y;
+      best.lastT = f.t;
+      best.votes[h.side] += weight(h);
+      best.xs.push(h.image[HAND_LM.WRIST][0]);
+      best.members.push([fi, hi]);
+    }
+  });
+
+  const sideOf = new Map<Track, HandSide>();
+  for (const t of tracks) sideOf.set(t, t.votes.right >= t.votes.left ? 'right' : 'left');
+  // Trilhas simultâneas com o mesmo lado: a mais à esquerda da imagem é a mão direita
+  const meanX = (t: Track) => t.xs.reduce((a, b) => a + b, 0) / t.xs.length;
+  for (let i = 0; i < tracks.length; i++) {
+    for (let j = i + 1; j < tracks.length; j++) {
+      const a = tracks[i];
+      const b = tracks[j];
+      if (sideOf.get(a) !== sideOf.get(b)) continue;
+      const framesA = new Set(a.members.map(([fi]) => fi));
+      if (!b.members.some(([fi]) => framesA.has(fi))) continue;
+      const aIsRight = meanX(a) < meanX(b);
+      sideOf.set(a, aIsRight ? 'right' : 'left');
+      sideOf.set(b, aIsRight ? 'left' : 'right');
+    }
+  }
+
+  const frames = capture.frames.map((f) => ({ ...f, hands: [...f.hands] }));
+  for (const t of tracks) {
+    const side = sideOf.get(t)!;
+    for (const [fi, hi] of t.members) frames[fi].hands[hi] = { ...frames[fi].hands[hi], side };
+  }
+  return { ...capture, frames };
 }
 
 // ---------------------------------------------------------------------------
