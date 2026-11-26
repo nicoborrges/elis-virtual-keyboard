@@ -137,6 +137,8 @@ Referência: artes conceituais dos decks (logo dourado, figura encapuzada com m�
 - Idioma do código: identificadores em inglês; textos de UI e docs em pt-BR.
 - Commits: `tipo[Escopo]: descrição` (ex.: `feat[ELiSKeyboard]: ...`, `fix[Hands3D]: ...`). **Sempre commitar** ao concluir uma alteração (pedido do Nicolas).
 - Antes de concluir: `npm run lint`, `npm test` e `npm run build`.
+- **Diário de metodologia:** toda alteração concluída ganha (ou atualiza) uma entrada em `docs/metodologia/`, no mesmo commit, seguindo a skill `diario-metodologia`. É a base do capítulo de metodologia do TCC.
+- Skills do projeto ficam em `.claude/skills/` com cópia idêntica em `.agents/skills/` (outros agentes). `humanizer` (MIT, ver `ORIGEM.md`) revisa a prosa de docs e do diário.
 - O bundle do teclado não pode receber o MediaPipe: o estúdio é uma entrada separada do Vite (`estudio.html`).
 - Não alterar `public/fonts/ELiS-Beta.otf` nem os `char` de `elisMap.ts` sem validar na fonte.
 - Sinais/palavras de Libras novos só entram no dicionário com validação da equipe da Letras-UFG.
