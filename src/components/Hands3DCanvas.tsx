@@ -431,10 +431,16 @@ export const Hands3DCanvas: React.FC<Hands3DCanvasProps> = ({
         const perFingerPulse = drumWave
           ? (Math.sin(elapsed * 8.5 + idx * 1.15) + 1) * 0.35
           : fingerPulse;
-        f.mcp.rotation.x = lerp(f.mcp.rotation.x, pose.fingerMcpX + perFingerPulse + stagger, speed);
-        f.mcp.rotation.z = lerp(f.mcp.rotation.z, f.baseSplayZ * pose.fingerSplayScale, speed);
-        f.pip.rotation.x = lerp(f.pip.rotation.x, pose.fingerPipX + perFingerPulse * 1.1, speed);
-        f.dip.rotation.x = lerp(f.dip.rotation.x, pose.fingerDipX + perFingerPulse * 0.8, speed);
+        // Calibrated per-finger angles (capture pipeline) override the shared ELiS values
+        const calibrated = pose.fingerOverrides?.[idx];
+        const mcpX = calibrated ? calibrated.mcp : pose.fingerMcpX + stagger;
+        const splayZ = calibrated ? calibrated.splay : f.baseSplayZ * pose.fingerSplayScale;
+        const pipX = calibrated ? calibrated.pip : pose.fingerPipX;
+        const dipX = calibrated ? calibrated.dip : pose.fingerDipX;
+        f.mcp.rotation.x = lerp(f.mcp.rotation.x, mcpX + perFingerPulse, speed);
+        f.mcp.rotation.z = lerp(f.mcp.rotation.z, splayZ, speed);
+        f.pip.rotation.x = lerp(f.pip.rotation.x, pipX + perFingerPulse * 1.1, speed);
+        f.dip.rotation.x = lerp(f.dip.rotation.x, dipX + perFingerPulse * 0.8, speed);
       });
     };
 

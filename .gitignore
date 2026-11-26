@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Filmagens/fotos brutas de Libras (dados pessoais) — nunca versionar
+capturas/

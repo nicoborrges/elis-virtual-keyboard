@@ -8,6 +8,32 @@
  * Flexão positiva em `rotation.x` dobra o segmento em direção à palma (+Z).
  */
 import * as THREE from 'three';
+import rigCalibrationData from '../../data/rigCalibration.json';
+import type { FingerAngles, RigCalibration } from '../../pipeline/types';
+
+const RIG_CALIBRATION = rigCalibrationData as RigCalibration;
+
+/** Abertura lateral (rotation.z) de repouso de cada dedo na mão direita: [indicador, médio, anelar, mínimo]. Multiplicar por sideSign. */
+export const FINGER_BASE_SPLAY = [-0.11, -0.02, 0.06, 0.14] as const;
+
+/**
+ * Geometria do esqueleto (mão direita; x é multiplicado por sideSign).
+ * Usada pelo rig e pela pipeline de captura (gerador sintético / pontos de referência).
+ */
+export const FINGER_GEOMETRY = [
+  { name: 'index', x: 0.33, y: 0.51, len: [0.42, 0.28, 0.22] },
+  { name: 'middle', x: 0.11, y: 0.54, len: [0.46, 0.31, 0.23] },
+  { name: 'ring', x: -0.11, y: 0.51, len: [0.42, 0.28, 0.22] },
+  { name: 'pinky', x: -0.32, y: 0.44, len: [0.33, 0.22, 0.19] },
+] as const;
+
+export const THUMB_GEOMETRY = {
+  cmc: [0.4, -0.18] as const,
+  len: [0.34, 0.28, 0.24] as const,
+};
+
+/** Ponto do rig equivalente ao landmark 0 (punho) do MediaPipe: alinhado ao MCP do médio. */
+export const RIG_WRIST_POINT = [0.11, -0.5] as const;
 
 export interface FingerRig {
   mcp: THREE.Group;
@@ -45,6 +71,12 @@ export interface HandPoseTargets {
   fingerPipX: number;
   fingerDipX: number;
   fingerSplayScale: number;
+  /**
+   * Ângulos por dedo vindos da calibração da pipeline de captura
+   * ([indicador, médio, anelar, mínimo], já no lado desta mão). Quando presente,
+   * substitui fingerMcpX/PipX/DipX/SplayScale.
+   */
+  fingerOverrides?: FingerAngles[];
 }
 
 export function getPoseFromElis(
@@ -195,7 +227,46 @@ export function getPoseFromElis(
       break;
   }
 
+  applyRigCalibration(pose, thumbChar, fingersChar, palmChar, sideSign);
   return pose;
+}
+
+/**
+ * Sobrescreve as poses canônicas ajustadas à mão com as poses calibradas a partir
+ * de fotos reais (src/data/rigCalibration.json, gerado pelo Estúdio de Captura).
+ * A calibração é armazenada na convenção da mão direita; para a esquerda, os eixos
+ * Y e Z das rotações e a abertura lateral são espelhados.
+ */
+function applyRigCalibration(
+  pose: HandPoseTargets,
+  thumbChar: string | null,
+  fingersChar: string | null,
+  palmChar: string | null,
+  sideSign: 1 | -1
+) {
+  const thumb = thumbChar ? RIG_CALIBRATION.thumb[thumbChar] : undefined;
+  if (thumb) {
+    pose.thumbCmcX = thumb.cmc[0];
+    pose.thumbCmcY = sideSign * thumb.cmc[1];
+    pose.thumbCmcZ = sideSign * thumb.cmc[2];
+    pose.thumbMcpX = thumb.mcp;
+    pose.thumbIpX = thumb.ip;
+  }
+
+  const fingers = fingersChar ? RIG_CALIBRATION.fingers[fingersChar] : undefined;
+  if (fingers) {
+    pose.fingerOverrides = fingers.fingers.map((f) => ({
+      ...f,
+      splay: sideSign * f.splay,
+    }));
+  }
+
+  const palm = palmChar ? RIG_CALIBRATION.palm[palmChar] : undefined;
+  if (palm) {
+    pose.wristRotX = palm.wristEuler[0];
+    pose.wristRotY = sideSign * palm.wristEuler[1];
+    pose.wristRotZ = sideSign * palm.wristEuler[2];
+  }
 }
 
 export function createPalmGeometry(): THREE.ExtrudeGeometry {
@@ -276,12 +347,15 @@ export function createArticulatedHand(
   palmCenterPad.scale.set(1.3, 1.1, 0.35);
   wrist.add(palmCenterPad);
 
-  const fingerSpecs = [
-    { name: 'index', x: sideSign * 0.33, y: 0.51, len: [0.42, 0.28, 0.22], rad: 0.096, splay: -sideSign * 0.11 },
-    { name: 'middle', x: sideSign * 0.11, y: 0.54, len: [0.46, 0.31, 0.23], rad: 0.1, splay: -sideSign * 0.02 },
-    { name: 'ring', x: -sideSign * 0.11, y: 0.51, len: [0.42, 0.28, 0.22], rad: 0.094, splay: sideSign * 0.06 },
-    { name: 'pinky', x: -sideSign * 0.32, y: 0.44, len: [0.33, 0.22, 0.19], rad: 0.082, splay: sideSign * 0.14 },
-  ];
+  const fingerRadii = [0.096, 0.1, 0.094, 0.082];
+  const fingerSpecs = FINGER_GEOMETRY.map((g, i) => ({
+    name: g.name,
+    x: sideSign * g.x,
+    y: g.y,
+    len: g.len,
+    rad: fingerRadii[i],
+    splay: sideSign * FINGER_BASE_SPLAY[i],
+  }));
 
   const fingers: FingerRig[] = fingerSpecs.map((spec) => {
     const mcp = new THREE.Group();
@@ -352,7 +426,7 @@ export function createArticulatedHand(
 
   // Articulated Thumb (Polegar)
   const cmc = new THREE.Group();
-  cmc.position.set(sideSign * 0.4, -0.18, 0.14);
+  cmc.position.set(sideSign * THUMB_GEOMETRY.cmc[0], THUMB_GEOMETRY.cmc[1], 0.14);
   wrist.add(cmc);
 
   const cmcJoint = new THREE.Mesh(
@@ -361,7 +435,7 @@ export function createArticulatedHand(
   );
   cmc.add(cmcJoint);
 
-  const thumbBaseLen = 0.34;
+  const thumbBaseLen = THUMB_GEOMETRY.len[0];
   const thumbMeta = new THREE.Mesh(
     new THREE.CapsuleGeometry(0.115, thumbBaseLen - 0.16, 8, 16),
     skinMat
@@ -380,7 +454,7 @@ export function createArticulatedHand(
   );
   thumbMcp.add(thumbMcpJoint);
 
-  const thumbProxLen = 0.28;
+  const thumbProxLen = THUMB_GEOMETRY.len[1];
   const thumbProx = new THREE.Mesh(
     new THREE.CapsuleGeometry(0.102, thumbProxLen - 0.14, 8, 16),
     skinMat
@@ -399,7 +473,7 @@ export function createArticulatedHand(
   );
   thumbIp.add(thumbIpJoint);
 
-  const thumbDistLen = 0.24;
+  const thumbDistLen = THUMB_GEOMETRY.len[2];
   const thumbDist = new THREE.Mesh(
     new THREE.CapsuleGeometry(0.092, thumbDistLen - 0.12, 8, 16),
     skinMat
