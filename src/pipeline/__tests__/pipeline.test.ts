@@ -195,6 +195,35 @@ describe('lado das mãos e deslocamento', () => {
     expect(fixed.frames[0].hands[0].side).toBe('left');
   });
 
+  it('GIF de poses-chave: lados decididos pelo corpo não são reescritos pela estabilização (SEMANA, IFPR)', () => {
+    const hand = (side: HandSide, x: number) => ({
+      side,
+      sideSource: 'pose' as const,
+      labelSide: side,
+      score: 0.9,
+      image: Array.from({ length: 21 }, () => [x, 0.62, 0] as Vec3),
+      world: Array.from({ length: 21 }, () => [0, 0, 0] as Vec3),
+    });
+    // Quadro 0: direita em x 0,46 e esquerda em 0,74. Quadro 1 (0,5 s depois): esquerda em 0,55
+    // (perto de onde estava a direita) e direita em 0,29.
+    const capture: LandmarkCapture = {
+      schema: 'acme.landmarks',
+      version: 1,
+      source: { kind: 'keyframes', name: 'semana.gif', width: 800, height: 640, duration: 1 },
+      createdAt: '',
+      detector: 'teste',
+      frames: [
+        { t: 0, hands: [hand('right', 0.46), hand('left', 0.74)] },
+        { t: 0.5, hands: [hand('left', 0.55), hand('right', 0.29)] },
+      ],
+    };
+    const out = stabilizeSides(capture);
+    expect(out.frames.map((f) => f.hands.map((h) => h.side))).toEqual([
+      ['right', 'left'],
+      ['left', 'right'],
+    ]);
+  });
+
   it('sinalizante canhoto: a mão esquerda vira a dominante do rig', () => {
     const left = synthFromElis('left', -1, 'y', 'g', 'l').hand;
     const frames = solveCapture(captureOf([{ t: 0, hands: [left] }]), { dominantHand: 'left' });

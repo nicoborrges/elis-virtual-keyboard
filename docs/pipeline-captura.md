@@ -32,7 +32,7 @@ mídia ──► detecção ──► lado das mãos ──► limpeza ──►
 1. **Detecção** (`src/studio/detector.ts`): MediaPipe Tasks Vision 1.2.3 no navegador. Retorna 21 pontos por mão (na imagem e em metros) e 33 pontos do corpo (opcional). **A mídia não sai da máquina.** GIF animado é lido quadro a quadro com `ImageDecoder` (`src/studio/gifSource.ts`, Chrome e Edge) e cada quadro é detectado como foto independente.
 2. **Lado das mãos** (`assignHandSides`): usa o punho do esqueleto do corpo mais próximo. Sem corpo, usa o rótulo do detector. Mídia espelhada é desespelhada antes, nas coordenadas.
 3. **Limpeza** (`stabilizeSides` + `filter.ts`; GIF de poses-chave só passa pela estabilização do lado):
-   - rastreia cada mão entre os quadros e decide o lado por votação, porque o rótulo do detector oscila D/E;
+   - rastreia cada mão entre os quadros e decide o lado por votação, porque o rótulo do detector oscila D/E. A votação só corrige mãos cujo lado veio do rótulo: o que o corpo ou a troca manual decidiram fica, e um quadro nunca termina com duas mãos do mesmo lado;
    - preenche ausências de até 4 quadros;
    - suaviza com filtro One Euro.
 4. **Solver** (`solver.ts`): converte os pontos nos ângulos do rig procedural:
@@ -173,6 +173,8 @@ A ordem da escrita ELiS é fixa: configuração de dedos (polegar e demais dedos
 
 | Palavra | ELiS | Polegar | Dedos | Palma | Local | Movimento | Resultado no IFPR |
 |---|---|---|---|---|---|---|---|
-| BONITO | `tgçQÄ` | `t` horizontal | `g` estendidos | `ç` para trás | `Q` rosto | `Ä` (no mapa: tamborilar de dedos) | Quadro #1 (palma na frente do rosto): `t` 96%, `g` 60%, `ç` 99%, Rosto 26% (1º lugar). Movimento não é medido |
+| BONITO | `tgçQÄ` | `t` horizontal | `g` estendidos | `ç` para trás | `Q` rosto | `Ä` fechar a mão dedo a dedo | Quadro #1 (palma na frente do rosto): `t` 96%, `g` 60%, `ç` 99%, Rosto 26% (1º lugar). O quadro #2 mostra a mão fechando, como descreve Barros (2016) |
+| SEMANA (mão dominante) | `tg qggq v J é` | `q` | `ggq` (um glifo por dedo) | `v` para baixo | `J` corpo | `é` para a direita | Quadro #0: `q` 48% ✓, dedos `o` (o classificador só dá um glifo), `v` 99% ✓, Local `K` tórax com `J` em 2º. A palma vai de x −0,09 a +0,76: para a direita ✓ (movimento ainda não classificado) |
+| SEMANA (mão não dominante) | | `t` | `g` | `v` | `J` | | Quadro #1: `y` (com `t` em 2º), `g` 100% ✓, `v` 100% ✓ |
 
-No GIF do IFPR, a mão de BONITO fecha descendo para o queixo. Pode ser outra variante do sinal, ou o rótulo de `Ä` no `elisMap.ts` pode não ser "tamborilar". Fica para a equipe da Letras conferir.
+Fonte das escritas: Barros (2016), ver [referencias-elis.md](referencias-elis.md). Os outros sinais do artigo (LIMPO, VERDADE, OBSERVAR, INTERVALO) não têm GIF no IFPR. Com um glifo só para os quatro dedos, o classificador não consegue escrever configurações como `qggq`; ver as lacunas em [referencias-elis.md](referencias-elis.md).

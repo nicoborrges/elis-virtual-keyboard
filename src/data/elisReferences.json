@@ -1,14 +1,78 @@
 {
   "schema": "acme.elisreferences",
-  "version": 1,
-  "description": "Escritas ELiS de referência para medir o acerto da pipeline de captura. Não é o dicionário do jogo: só entra no dicionário o que a equipe da Letras-UFG validar.",
+  "version": 2,
+  "description": "Escritas ELiS de referência para medir o acerto da pipeline de captura. Não é o dicionário do jogo: só entra no dicionário o que a equipe da Letras-UFG validar. `elis` é a escrita exata (caracteres da fonte, tirados da camada de texto do artigo). Em `hands`, `fingers` pode ter um glifo por dedo (indicador, médio, ...; o último vale para os dedos restantes).",
+  "sources": {
+    "barros2016": "BARROS, M. E. Princípios básicos da ELiS: escrita das línguas de sinais. Revista Sinalizar, Goiânia, v. 1, n. 2, p. 204-210, jul./dez. 2016. Disponível em: https://www.revistas.ufg.br/revsinal/article/view/38881"
+  },
   "entries": [
     {
       "word": "bonito",
       "elis": "tgçQÄ",
-      "parts": { "thumb": "t", "fingers": "g", "palm": "ç", "location": "Q", "movement": "Ä" },
-      "source": "Trecho de texto sobre a ELiS enviado pela dupla em 2026-11-26 (exemplo do sinal BONITO; referência bibliográfica a registrar)",
-      "reference_media": "IFPR Campus Umuarama, Libras GIFs, Adjetivos, Bonit@.gif (pode ser outra variante)",
+      "signType": "monomanual",
+      "hands": {
+        "dominant": { "thumb": "t", "fingers": "g", "palm": "ç", "location": "Q", "movement": "Ä" }
+      },
+      "description": "CD: polegar e demais dedos estendidos; OP: palma voltada para trás; PA: mão à frente do rosto; M: fechar a mão dedo a dedo (tamborilar de dedos sem repetição).",
+      "source": "barros2016, p. 207-208",
+      "reference_media": "IFPR Libras GIFs, Adjetivos, Bonit@.gif",
+      "validatedByLetras": false
+    },
+    {
+      "word": "limpo",
+      "elis": "/tgzKÄ",
+      "signType": "bimanual simétrico",
+      "hands": {
+        "dominant": { "thumb": "t", "fingers": "g", "palm": "z", "location": "K", "movement": "Ä" },
+        "nonDominant": { "thumb": "t", "fingers": "g", "palm": "z", "location": "K", "movement": "Ä" }
+      },
+      "description": "O primeiro caractere marca duas mãos com a mesma configuração de dedos.",
+      "source": "barros2016, p. 208",
+      "validatedByLetras": false
+    },
+    {
+      "word": "semana",
+      "elis": "tgqggqvJé",
+      "signType": "bimanual quase simétrico",
+      "hands": {
+        "nonDominant": { "thumb": "t", "fingers": "g", "palm": "v", "location": "J" },
+        "dominant": { "thumb": "q", "fingers": "ggq", "palm": "v", "location": "J", "movement": "é" }
+      },
+      "description": "Em cada grupo vem primeiro a mão não dominante e depois a dominante; OP e PA iguais para as duas.",
+      "source": "barros2016, p. 208",
+      "reference_media": "IFPR Libras GIFs, Calendário, semana.gif",
+      "validatedByLetras": false
+    },
+    {
+      "word": "verdade",
+      "elis": "wgsqv@äm",
+      "signType": "com mão de apoio",
+      "hands": {
+        "dominant": { "thumb": "w", "fingers": "gsq", "palm": "v", "movement": "ä" },
+        "nonDominant": { "location": "@" }
+      },
+      "description": "O PA é da mão de apoio (palma); CD, OP e M são da mão dominante. O último caractere é o diacrítico de repetição do movimento.",
+      "source": "barros2016, p. 208-209",
+      "validatedByLetras": false
+    },
+    {
+      "word": "observar",
+      "elis": "qgqçIbqggqvJà",
+      "signType": "composto",
+      "parts": [
+        { "dominant": { "thumb": "q", "fingers": "gq", "palm": "ç", "location": "I" } },
+        { "dominant": { "thumb": "q", "fingers": "ggq", "palm": "v", "location": "J", "movement": "à" } }
+      ],
+      "description": "Duas partes unidas pelo elemento gráfico de sinal composto (∴).",
+      "source": "barros2016, p. 209",
+      "validatedByLetras": false
+    },
+    {
+      "word": "intervalo",
+      "elis": "tgzthçc&3%-ê",
+      "signType": "bimanual assimétrico",
+      "description": "Não decomposto: tem diacríticos sobrescritos e o traço de ausência de movimento numa das mãos. Guardado só como escrita.",
+      "source": "barros2016, p. 208",
       "validatedByLetras": false
     }
   ]

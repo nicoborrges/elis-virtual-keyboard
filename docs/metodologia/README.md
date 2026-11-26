@@ -12,4 +12,5 @@ As entradas seguem a skill `diario-metodologia` (`.claude/skills/diario-metodolo
 | 2026-11-26 | [Pipeline de captura, primeira fatia](2026-11-26-pipeline-de-captura-primeira-fatia.md) | Pipeline | `aa9200e`…`cb41473` |
 | 2026-11-26 | [Skills de documentação (diário e humanizer)](../../.claude/skills/diario-metodologia/SKILL.md) | Ferramentas | `fbbffe1` |
 | 2026-11-26 | [GIFs do IFPR, ponto de articulação e proporções](2026-11-26-gifs-ifpr-posicionamento-e-proporcoes.md) | Pipeline | `6a42e8a`, `d06f0af` |
-| 2026-11-26 | [Primeira escrita ELiS de referência: BONITO](2026-11-26-primeira-referencia-elis-bonito.md) | Pipeline | commit desta entrada |
+| 2026-11-26 | [Primeira escrita ELiS de referência: BONITO](2026-11-26-primeira-referencia-elis-bonito.md) | Pipeline | `6456595` |
+| 2026-11-26 | [Artigos sobre a ELiS, conferência do mapa e SEMANA](2026-11-26-artigos-elis-e-semana.md) | Pipeline | commit desta entrada |

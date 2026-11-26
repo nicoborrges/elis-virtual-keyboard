@@ -41,7 +41,7 @@ Conferir pela primeira vez as sugestões da pipeline contra uma escrita ELiS con
 - Uma referência só: não dá para falar em taxa de acerto.
 - Movimento (`Ä`) não é medido. No GIF do IFPR a mão fecha descendo para o queixo, o que não parece "tamborilar". Pode ser variante do sinal, ou o rótulo de `Ä` no `elisMap.ts` pode estar errado. A equipe da Letras precisa conferir.
 - A escolha do quadro que representa a escrita (#1) foi feita a olho. A pipeline ainda não escolhe sozinha o quadro "da escrita".
-- A fonte bibliográfica do trecho ainda não foi registrada.
+- A fonte bibliográfica do trecho ainda não foi registrada. *(Atualização: é Barros (2016), ver a entrada "Artigos sobre a ELiS". O artigo confirma que `Ä` é fechar a mão dedo a dedo, como no GIF do IFPR.)*
 
 ## Próximos passos
 

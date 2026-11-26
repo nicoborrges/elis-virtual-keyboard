@@ -100,7 +100,8 @@ O teclado é um **módulo à parte** (adaptador de entrada). O protótipo atual 
 
 **Mapeamento decks → código**
 - 5 parâmetros do slide 5 ≈ 5 slots do teclado (`StepNumber 1..5`). A ordem da escrita ELiS é fixa: configuração de dedos (polegar + demais dedos), orientação da palma, ponto de articulação, movimento (que pode faltar). Ex.: BONITO = `tgçQÄ`.
-- Escritas ELiS de **referência** para medir a pipeline ficam em `src/data/elisReferences.json` (não é o dicionário).
+- Escritas ELiS de **referência** para medir a pipeline ficam em `src/data/elisReferences.json` (não é o dicionário), tiradas de Barros (2016). Bibliografia e o que cada fonte muda no projeto: [docs/referencias-elis.md](docs/referencias-elis.md). `elisMap.ts` foi conferido contra a tabela da criadora da ELiS: os 95 glifos batem.
+- **Lacunas conhecidas frente à ELiS completa** (não generalizar antes da hora, mas não esquecer): configuração de dedos com um glifo por dedo (ex.: `qggq`), tipos de sinal além do monomanual (bimanual, mão de apoio, composto) e diacríticos (contato, lateralidade, repetição).
 - "Parser de visografemas" ≈ `elisMap.ts` + consolidação em `App.tsx` (ainda sem regras de puzzle nem dicionário de palavras).
 - "Triggers de gameplay" — **não existe ainda**.
 

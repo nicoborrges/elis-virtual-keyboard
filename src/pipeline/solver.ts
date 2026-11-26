@@ -437,8 +437,17 @@ export function stabilizeSides(capture: LandmarkCapture): LandmarkCapture {
   const frames = capture.frames.map((f) => ({ ...f, hands: [...f.hands] }));
   for (const t of tracks) {
     const side = sideOf.get(t)!;
-    for (const [fi, hi] of t.members) frames[fi].hands[hi] = { ...frames[fi].hands[hi], side };
+    for (const [fi, hi] of t.members) {
+      // Corpo e troca manual já decidem o lado quadro a quadro: a votação só corrige o rótulo,
+      // que oscila. Sem isso, quadros distantes (GIF de poses-chave) ligam mãos diferentes.
+      if (frames[fi].hands[hi].sideSource !== 'handedness') continue;
+      frames[fi].hands[hi] = { ...frames[fi].hands[hi], side };
+    }
   }
+  // Nunca deixar duas mãos do mesmo lado no mesmo quadro: volta ao lado original
+  frames.forEach((f, fi) => {
+    if (f.hands.length === 2 && f.hands[0].side === f.hands[1].side) frames[fi] = capture.frames[fi];
+  });
   return { ...capture, frames };
 }
 
