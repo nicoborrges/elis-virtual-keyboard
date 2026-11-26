@@ -73,6 +73,8 @@ O teclado é um **módulo à parte** (adaptador de entrada). O protótipo atual 
 - **Quem performa o sinal na tela:** as **mãos 3D do painel do teclado** (como no protótipo). **Essas mãos são o protótipo da fagulha**: no jogo final, quem performa os sinais é a fagulha (forma final do que hoje são as mãos procedurais).
 - **No jogo, o teclado abre a partir de um botão** como **painel lateral**: **não cobre a cena e não pausa o jogo** — a cena fica visível para o jogador ver o efeito do sinal. **Nada acontece no mundo enquanto o jogador escreve** (sem inimigos/eventos durante a escrita). Design do painel (lado, tamanho) ainda não definido.
 - **O protagonista não reage à conjuração** na cena; quem reage/comunica é o **avatar comunicador**.
+- **Avatar comunicador:** NPC na cena que **conversa em Libras**, sinalizando com **mãos 3D próprias** (mesma tecnologia da fagulha/mãos do teclado). É a **principal fonte das pistas visuais**.
+- **Onde a fagulha vive no jogo final** (dentro do painel ou flutuando na cena): ainda não definido.
 - **Teclado = módulo à parte.** Muito provavelmente haverá uma **Câmara de Testes**: modo livre onde o jogador pratica ELiS e as mãos 3D animam **qualquer combinação** escrita (como hoje).
 - **Combate:** pode haver; a lógica de gameplay é passo futuro.
 - **Pilar "sem texto"**: meta do **jogo final**. No **protótipo atual o texto explicativo fica** (rótulos das etapas, Espaço, Tocar, Tabela, dicas). Não remover textos da UI sem pedido.
@@ -145,7 +147,6 @@ Referência: artes conceituais dos decks (logo dourado, figura encapuzada com m�
 - Hospedagem UFG: contato e plano B (a conversar).
 
 **7ª rodada (2026-11-26)**
-- *Avatar comunicador:* quem é — um NPC na cena que conversa em Libras? Como ele sinaliza (mãos 3D próprias, a mesma tecnologia da fagulha)? Ele é a fonte principal das pistas visuais?
-- *Fagulha no jogo final:* ela vive dentro do painel do teclado ou flutua na cena até o alvo (como no prólogo)?
+- *Fagulha no jogo final:* dentro do painel do teclado ou flutuando na cena até o alvo?
 - *Design do painel lateral:* lado, tamanho, troca para canhotos — ainda indefinido.
 - *Testes:* nº de participantes, local, login × código de sessão, gravação de tela — ainda indefinido.
