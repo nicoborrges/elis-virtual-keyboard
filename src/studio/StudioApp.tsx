@@ -5,17 +5,27 @@ import { ELIS_VISOGRAFEMAS } from '../data/elisMap';
 import { addCalibrationSample, removeCalibration, roundDeep, type CalibrationStep } from '../pipeline/calibration';
 import { suggestForHand, type Suggestion } from '../pipeline/classify';
 import { fillGaps, smoothCapture } from '../pipeline/filter';
+import { measureLocation, type LocationCandidate } from '../pipeline/location';
+import { FINGER_NAMES, measureProportions, type ProportionReport } from '../pipeline/proportions';
 import { frameAt, labelAgreement, solveCapture, stabilizeSides, suspectSides, swapHandSides } from '../pipeline/solver';
 import type { HandSide, LandmarkCapture, RigCalibration, SignClip, SolvedHand } from '../pipeline/types';
 import { cn } from '../utils/cn';
 import { CaptureDetector, finiteDuration, HAND_CONNECTIONS } from './detector';
+import { GifSource } from './gifSource';
 import { RigPreview } from './RigPreview';
 
-type Media = { kind: 'image' | 'video'; url: string; name: string };
+type Media = { kind: 'image' | 'video' | 'gif'; url: string; name: string };
 type Status = { kind: 'idle' | 'busy' | 'error' | 'ok'; text: string };
 
 const STEP_OF: Record<CalibrationStep, 1 | 2 | 3> = { thumb: 1, fingers: 2, palm: 3 };
 const STEP_LABEL: Record<CalibrationStep, string> = { thumb: 'Polegar', fingers: 'Dedos', palm: 'Palma' };
+
+/** GIF de poses-chave: cada quadro vale do seu início até o próximo (não o mais próximo). */
+const keyframeTime = (frames: { t: number }[], t: number) => {
+  let start = frames[0]?.t ?? 0;
+  for (const f of frames) if (f.t <= t + 1e-6) start = f.t;
+  return start;
+};
 
 const slugify = (s: string) =>
   s
@@ -94,12 +104,21 @@ export function StudioApp() {
   const abortRef = useRef<AbortController | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const gifRef = useRef<GifSource | null>(null);
+  const gifCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const solved = useMemo(() => (capture ? solveCapture(capture, { dominantHand }) : []), [capture, dominantHand]);
   const duration = capture?.source.duration ?? 0;
-  const currentFrame = frameAt(solved, time);
-  const currentCaptureFrame = capture ? frameAt(capture.frames, time) : undefined;
+  const loopDuration = duration || (media?.kind === 'gif' ? videoDuration : 0);
+  const sampleTime = capture?.source.kind === 'keyframes' ? keyframeTime(capture.frames, time) : time;
+  const currentFrame = frameAt(solved, sampleTime);
+  const currentCaptureFrame = capture ? frameAt(capture.frames, sampleTime) : undefined;
+  const location = useMemo(
+    () => (capture && currentCaptureFrame ? measureLocation(currentCaptureFrame, dominantHand, capture.source) : null),
+    [capture, currentCaptureFrame, dominantHand]
+  );
+  const proportions = useMemo<ProportionReport | null>(() => (capture ? measureProportions([capture]) : null), [capture]);
 
   const suggestions = useMemo(() => {
     const s = (h: SolvedHand | undefined, sign: 1 | -1) => (h ? suggestForHand(h, sign) : null);
@@ -125,7 +144,22 @@ export function StudioApp() {
       setStatus({ kind: 'ok', text: `Landmarks carregados de ${file.name}.` });
       return;
     }
-    const kind = file.type.startsWith('video') ? 'video' : file.type.startsWith('image') ? 'image' : null;
+    gifRef.current?.close();
+    gifRef.current = null;
+    let kind: Media['kind'] | null = file.type.startsWith('video') ? 'video' : file.type.startsWith('image') ? 'image' : null;
+    if (file.type === 'image/gif' && GifSource.supported()) {
+      try {
+        const gif = await GifSource.open(file);
+        if (gif.frames.length > 1) {
+          gifRef.current = gif;
+          kind = 'gif';
+          setVideoDuration(gif.duration);
+        } else gif.close();
+      } catch (err) {
+        setStatus({ kind: 'error', text: `GIF ilegível: ${(err as Error).message}` });
+        return;
+      }
+    }
     if (!kind) {
       setStatus({ kind: 'error', text: 'Formato não suportado. Use imagem, vídeo ou JSON da pipeline.' });
       return;
@@ -137,7 +171,13 @@ export function StudioApp() {
     setCapture(null);
     setTime(0);
     setProgress(0);
-    setStatus({ kind: 'idle', text: 'Mídia carregada. Clique em “Extrair landmarks”.' });
+    setStatus({
+      kind: 'idle',
+      text:
+        kind === 'gif'
+          ? `GIF com ${gifRef.current!.frames.length} quadros (poses-chave). Clique em “Extrair landmarks”.`
+          : 'Mídia carregada. Clique em “Extrair landmarks”.',
+    });
   }, []);
 
   const ensureDetector = useCallback(async () => {
@@ -158,6 +198,9 @@ export function StudioApp() {
       if (media.kind === 'image') {
         setStatus({ kind: 'busy', text: 'Detectando mãos…' });
         raw = await detector.detectImage(imgRef.current!, media.name, { usePose, mirroredInput });
+      } else if (media.kind === 'gif') {
+        setStatus({ kind: 'busy', text: 'Detectando cada pose-chave do GIF…' });
+        raw = await detector.detectKeyframes(gifRef.current!, media.name, { usePose, mirroredInput, onProgress: setProgress });
       } else {
         const controller = new AbortController();
         abortRef.current = controller;
@@ -175,6 +218,9 @@ export function StudioApp() {
         clean = stabilizeSides(clean);
         clean = fillGaps(clean, 4);
         if (smoothing) clean = smoothCapture(clean);
+      } else if (raw.source.kind === 'keyframes') {
+        // Quadros longe no tempo: só estabiliza o lado; suavizar misturaria poses distintas
+        clean = stabilizeSides(clean);
       }
       setCapture(clean);
       setStatus({ kind: 'ok', text: describeCapture(clean) });
@@ -196,7 +242,32 @@ export function StudioApp() {
     setStatus({ kind: 'ok', text: `Lados trocados manualmente. ${describeCapture(swapped)}` });
   };
 
-  useEffect(() => () => detectorRef.current?.close(), []);
+  useEffect(
+    () => () => {
+      detectorRef.current?.close();
+      gifRef.current?.close();
+    },
+    []
+  );
+
+  // Desenha o quadro do GIF correspondente ao tempo atual
+  useEffect(() => {
+    const gif = gifRef.current;
+    const canvas = gifCanvasRef.current;
+    if (media?.kind !== 'gif' || !gif || !canvas) return;
+    let cancelled = false;
+    void gif.frame(gif.indexAt(time)).then((frame) => {
+      if (!cancelled) {
+        canvas.width = gif.width;
+        canvas.height = gif.height;
+        canvas.getContext('2d')!.drawImage(frame, 0, 0);
+      }
+      frame.close();
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [media, time]);
 
   // ------------------------------------------------- tempo / reprodução
   useEffect(() => {
@@ -208,15 +279,15 @@ export function StudioApp() {
       if (video && media?.kind === 'video') {
         setTime(video.currentTime);
         if (video.paused) setPlaying(false);
-      } else if (duration > 0) {
-        setTime((t) => (t + (now - last) / 1000) % duration);
+      } else if (loopDuration > 0) {
+        setTime((t) => (t + (now - last) / 1000) % loopDuration);
       }
       last = now;
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [playing, media, duration]);
+  }, [playing, media, loopDuration]);
 
   const togglePlay = () => {
     const video = videoRef.current;
@@ -237,7 +308,7 @@ export function StudioApp() {
   // -------------------------------------------------------- sobreposição
   useEffect(() => {
     const canvas = canvasRef.current;
-    const el = media?.kind === 'video' ? videoRef.current : imgRef.current;
+    const el = media?.kind === 'video' ? videoRef.current : media?.kind === 'gif' ? gifCanvasRef.current : imgRef.current;
     if (!canvas || !el) return;
     const w = el.clientWidth;
     const h = el.clientHeight;
@@ -336,7 +407,8 @@ export function StudioApp() {
   const useSuggestionAsElis = () => {
     const s = suggestions.dominant;
     if (!s) return;
-    setClipForm((f) => ({ ...f, elis: s.thumb[0].char + s.fingers[0].char + s.palm[0].char }));
+    const local = location?.candidates[0]?.char ?? '';
+    setClipForm((f) => ({ ...f, elis: s.thumb[0].char + s.fingers[0].char + s.palm[0].char + local }));
   };
 
   // ------------------------------------------------------------------ UI
@@ -369,7 +441,7 @@ export function StudioApp() {
             }}
           >
             <Upload className="w-5 h-5 text-gold-400" />
-            <span className="text-sm text-ink-200">Arraste ou escolha uma foto, vídeo ou JSON da pipeline</span>
+            <span className="text-sm text-ink-200">Arraste ou escolha uma foto, vídeo, GIF ou JSON da pipeline</span>
             <span className="text-[11px] text-ink-500">Guarde as gravações originais em <code>capturas/</code> (fora do Git)</span>
             <input
               type="file"
@@ -385,7 +457,9 @@ export function StudioApp() {
 
           {media && (
             <div className="relative self-center max-w-full rounded-xl overflow-hidden border border-ink-800 bg-black">
-              {media.kind === 'image' ? (
+              {media.kind === 'gif' ? (
+                <canvas ref={gifCanvasRef} aria-label="Quadro do GIF" className="block max-h-[56vh] w-auto max-w-full bg-white" />
+              ) : media.kind === 'image' ? (
                 <img ref={imgRef} src={media.url} alt="Mídia enviada" className="block max-h-[56vh] w-auto max-w-full" onLoad={() => setTime(0)} />
               ) : (
                 <video
@@ -408,7 +482,7 @@ export function StudioApp() {
             </div>
           )}
 
-          {(media?.kind === 'video' || (capture && duration > 0)) && (
+          {(media?.kind === 'video' || media?.kind === 'gif' || (capture && duration > 0)) && (
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -422,7 +496,7 @@ export function StudioApp() {
                 type="range"
                 min={0}
                 max={duration || videoDuration}
-                step={1 / fps}
+                step={media?.kind === 'gif' ? 0.05 : 1 / fps}
                 value={time}
                 onChange={(e) => scrub(Number(e.target.value))}
                 className="flex-1 accent-[#D8AE5E]"
@@ -498,7 +572,7 @@ export function StudioApp() {
               )}
             </div>
 
-            {status.kind === 'busy' && media?.kind === 'video' && progress > 0 && (
+            {status.kind === 'busy' && media?.kind !== 'image' && progress > 0 && (
               <div className="h-1.5 rounded-full bg-ink-800 overflow-hidden">
                 <div className="h-full bg-gold-400 transition-[width]" style={{ width: `${Math.round(progress * 100)}%` }} />
               </div>
@@ -526,9 +600,11 @@ export function StudioApp() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <SuggestionsCard title="Mão dominante" color="text-gold-300" data={suggestions.dominant} />
+            <SuggestionsCard title="Mão dominante" color="text-gold-300" data={suggestions.dominant} local={location?.candidates} />
             <SuggestionsCard title="Mão não dominante" color="text-wine-300" data={suggestions.nonDominant} />
           </div>
+
+          {proportions && <ProportionsPanel report={proportions} />}
 
           {/* --------------------------------------------- calibração */}
           <Panel title="Calibrar visografema (fotos)">
@@ -687,6 +763,53 @@ const Panel: React.FC<{ title: string; children: React.ReactNode }> = ({ title, 
   </div>
 );
 
+const pct = (measured: number, rig: number) => {
+  const d = Math.round((measured / rig - 1) * 100);
+  return `${d > 0 ? '+' : ''}${d}%`;
+};
+
+/** Proporções medidas × rig, em comprimentos de palma (modelagem 3D). */
+const ProportionsPanel: React.FC<{ report: ProportionReport }> = ({ report }) => {
+  const rows: [string, number[], number[]][] = [
+    ['Polegar', report.measured.thumb, report.rig.thumb],
+    ...FINGER_NAMES.map((n, i): [string, number[], number[]] => [
+      n[0].toUpperCase() + n.slice(1),
+      report.measured.fingers[i],
+      report.rig.fingers[i],
+    ]),
+  ];
+  return (
+    <Panel title="Proporções da mão (modelagem)">
+      <p className="text-[11px] text-ink-400">
+        Segmentos em comprimentos de palma, mediana de {report.samples} mão(s) desta captura, comparados com o rig. Largura da
+        palma: {report.measured.palmWidth.toFixed(2)} × {report.rig.palmWidth.toFixed(2)} no rig ({pct(report.measured.palmWidth, report.rig.palmWidth)}).
+      </p>
+      <table className="w-full text-[11px] font-mono text-ink-300">
+        <thead>
+          <tr className="text-ink-500">
+            <th className="text-left font-normal">Dedo</th>
+            <th className="font-normal">base</th>
+            <th className="font-normal">meio</th>
+            <th className="font-normal">ponta</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(([name, m, r]) => (
+            <tr key={name}>
+              <td className="text-ink-400">{name}</td>
+              {m.map((v, k) => (
+                <td key={k} className="text-center" title={`medido ${v.toFixed(3)} · rig ${r[k].toFixed(3)}`}>
+                  {v.toFixed(2)} <span className={Math.abs(v / r[k] - 1) > 0.15 ? 'text-wine-300' : 'text-ink-500'}>{pct(v, r[k])}</span>
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Panel>
+  );
+};
+
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <label className="grid gap-1">
     <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-500">{label}</span>
@@ -698,7 +821,9 @@ const SuggestionsCard: React.FC<{
   title: string;
   color: string;
   data: { thumb: Suggestion[]; fingers: Suggestion[]; palm: Suggestion[] } | null;
-}> = ({ title, color, data }) => (
+  /** Ponto de articulação medido pelo corpo (só aparece com ombros no quadro). */
+  local?: LocationCandidate[];
+}> = ({ title, color, data, local }) => (
   <div className="rounded-2xl border border-ink-800 bg-ink-950/60 p-3">
     <h3 className={cn('font-mono text-[10px] uppercase tracking-[0.16em] mb-2', color)}>{title}</h3>
     {!data ? (
@@ -710,6 +835,7 @@ const SuggestionsCard: React.FC<{
             ['Polegar', data.thumb],
             ['Dedos', data.fingers],
             ['Palma', data.palm],
+            ...(local ? ([['Local', local]] as const) : []),
           ] as const
         ).map(([label, list]) => (
           <div key={label} className="flex items-center gap-2">

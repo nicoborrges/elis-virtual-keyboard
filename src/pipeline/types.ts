@@ -41,8 +41,15 @@ export interface CaptureFrame {
 }
 
 export interface CaptureSource {
-  kind: 'image' | 'video';
+  /**
+   * `keyframes`: GIF animado com poucos quadros longos (ex.: 2 a 9 quadros de 0,4 s nos
+   * GIFs do IFPR). Cada quadro é uma pose-chave independente: sem suavização nem
+   * preenchimento de falhas, que supõem quadros próximos.
+   */
+  kind: 'image' | 'video' | 'keyframes';
   name: string;
+  /** De onde veio a mídia, quando é de terceiros (URL da página). Nunca nome de pessoa. */
+  origin?: string;
   width: number;
   height: number;
   fps?: number;

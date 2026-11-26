@@ -86,7 +86,8 @@ O teclado é um **módulo à parte** (adaptador de entrada). O protótipo atual 
 **Arte e animação**
 - Assets: **metade gerados por IA, metade assets livres de licença** (preferir CC0; registrar origem/licença de cada asset).
 - **Pipeline de IA está no escopo**: vai alimentar o 3D/animação dos sinais. Vídeos de referência gravados pela **monitora da Letras**. O rig procedural atual (NOTAS_MODELO_3D.md) equivale à contingência "poses-chave".
-- **Pipeline de alimentação (primeira fatia, 2026-11-26):** roda no navegador (MediaPipe), neste repo. **Fotos calibram** as poses dos visografemas; **vídeos viram clipes** por palavra. Landmarks limpos são a fonte da verdade (independe da engine); ângulos do rig são derivados. Mídia bruta fica em `capturas/` (gitignored). Ainda **não testada com filmagem real**.
+- **Pipeline de alimentação:** é um **ciclo de melhoria** do modelo 3D (referência em Libras → medir → comparar com o rig por visografema → corrigir → registrar) em quatro frentes: configuração da mão (etapas 1–3), **posicionamento** (etapa 4, ponto de articulação), animação (etapa 5 e palavras) e **modelagem** (proporções da mão). Roda no navegador (MediaPipe), neste repo. Landmarks limpos são a fonte da verdade; ângulos do rig são derivados. Mídia bruta fica em `capturas/` (gitignored). Ver [docs/pipeline-captura.md](docs/pipeline-captura.md).
+- **Referência externa:** GIFs do [IFPR Libras GIFs](https://ifpr.edu.br/umuarama/libras-gifs/) (poses-chave, câmera frontal, ombros visíveis). Primeiro teste com mãos humanas (2026-11-26): rótulo × corpo 45/45, o que confirma a convenção do rótulo do MediaPipe confirmada. Página **sem licença declarada**: só referência local, sem versionar mídia; não são validados pela Letras-UFG.
 - **Duas fontes de animação:** o **rig procedural** continua animando **qualquer combinação** (Câmara de Testes); **palavras do dicionário** usam as animações da **pipeline de IA**.
 
 **Pesquisa e projeto**

@@ -14,6 +14,7 @@ import {
 } from '@mediapipe/tasks-vision';
 import { assignHandSides, unmirrorDetection, type RawHandDetection } from '../pipeline/solver';
 import type { CaptureFrame, CapturedPose, CaptureSource, LandmarkCapture, Vec3 } from '../pipeline/types';
+import type { GifSource } from './gifSource';
 
 export const MEDIAPIPE_VERSION = '1.2.3';
 const WASM_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/wasm`;
@@ -145,6 +146,43 @@ export class CaptureDetector {
 
     return wrap(
       { kind: 'video', name, ...size, fps: opts.fps, duration, mirrored: opts.mirroredInput },
+      frames,
+      this.hasPose && opts.usePose
+    );
+  }
+
+  /**
+   * GIF de poses-chave: cada quadro é detectado como foto independente (modo IMAGE),
+   * porque os quadros ficam longe demais no tempo para o rastreamento do modo VIDEO.
+   */
+  async detectKeyframes(
+    gif: GifSource,
+    name: string,
+    opts: DetectorOptions & { origin?: string; onProgress?: (fraction: number) => void }
+  ): Promise<LandmarkCapture> {
+    await this.setMode('IMAGE');
+    const size = { width: gif.width, height: gif.height };
+    const frames: CaptureFrame[] = [];
+    for (let i = 0; i < gif.frames.length; i++) {
+      const image = await gif.frame(i);
+      try {
+        const hr = this.hands.detect(image);
+        const pr = opts.usePose && this.pose ? this.pose.detect(image) : null;
+        frames.push(this.toFrame(gif.frames[i].t, hr, pr, size, opts.mirroredInput));
+      } finally {
+        image.close();
+      }
+      opts.onProgress?.((i + 1) / gif.frames.length);
+    }
+    return wrap(
+      {
+        kind: 'keyframes',
+        name,
+        ...size,
+        duration: gif.duration,
+        mirrored: opts.mirroredInput,
+        ...(opts.origin ? { origin: opts.origin } : {}),
+      },
       frames,
       this.hasPose && opts.usePose
     );
