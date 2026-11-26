@@ -2,7 +2,7 @@
 
 - **Data:** 2026-11-26
 - **Etapa do cronograma:** Dez 2026 (mecânica base); pipeline de animação
-- **Branch e commits:** `feat/pipeline-captura`, commit desta entrada (`feat[Pipeline]: ...GIF keyframes, location and hand proportions`)
+- **Branch e commits:** `feat/pipeline-captura`, `6a42e8a` (código e primeira versão desta entrada) e a correção seguinte (contagem de mãos e conclusão sobre proporções)
 - **Arquivos principais:** `src/studio/gifSource.ts`, `src/studio/detector.ts`, `src/pipeline/location.ts`, `src/pipeline/proportions.ts`, `src/studio/StudioApp.tsx`, `docs/pipeline-captura.md`
 
 ## Objetivo
@@ -34,34 +34,35 @@ A dupla esclareceu que a pipeline serve para melhorar de forma contínua três c
   - Na primeira versão, a mão erguida na frente do próprio ombro aparecia como "Ombro" (por exemplo, em "tchau", "meu nome" e "seu nome"). Em 2D a mão se sobrepõe ao ombro sem tocá-lo. Passamos a usar só o ombro do outro lado, como já fazíamos com punho e cotovelo.
   - A testa tinha um ponto só, no centro, e a mão na têmpora virava "Lateral da cabeça". Passamos a usar três pontos na testa e afastamos a âncora da lateral para fora da orelha.
 - **Não ajustar mais os parâmetros pelos nossos olhos.** Ninguém da dupla nem o assistente é especialista em ELiS. Ajustar as âncoras até a sugestão "parecer certa" seria calibrar pelo palpite. O ajuste fino espera escritas ELiS de referência.
-- **Não aplicar posições nem proporções ao rig ainda.** As posições do teclado (`articulation3DMap.ts`) foram escolhidas para legibilidade. Trocar por fidelidade é uma decisão de design da dupla. As proporções vêm de uma pessoa só e de pontos 3D estimados por modelo (ver Limitações).
+- **Não aplicar posições nem proporções ao rig ainda.** As posições do teclado (`articulation3DMap.ts`) foram escolhidas para legibilidade. Trocar por fidelidade é uma decisão de design da dupla. As proporções vêm de uma pessoa só, e a primeira leitura (pelos pontos 3D) apontava a correção errada.
+- **Desconfiar de resultado que contradiz a anatomia.** A medida 3D dizia que a falange da ponta era do tamanho da falange da base. Antes de registrar como defeito do rig, conferimos por outro caminho (2D), e a conclusão se inverteu.
 - **Não usar a sugestão como rótulo de calibração.** Isso tornaria a calibração circular.
 
 ## Resultados e evidências
 
-- **Detecção:** 45 mãos em 40 quadros, todas com o corpo detectado.
-- **Lado das mãos:** o esqueleto do corpo decidiu o lado das 45 mãos. Na conferência visual de 23 quadros (10 GIFs), todos estavam certos. O rótulo de mão do MediaPipe concordou com o corpo em 45 de 45 (100%), o que confirma a convenção documentada (mão do sujeito; imagem espelhada inverte). Era a pendência principal da primeira fatia.
+- **Detecção:** 44 mãos em 40 quadros, todas com o corpo detectado. A mensagem do commit `6a42e8a` diz 45 por erro de soma; o número certo é 44.
+- **Lado das mãos:** o esqueleto do corpo decidiu o lado das 44 mãos. Na conferência visual de 23 quadros (10 GIFs), todos estavam certos. O rótulo de mão do MediaPipe concordou com o corpo em 44 de 44 (100%), o que confirma a convenção documentada (mão do sujeito; imagem espelhada inverte). Era a pendência principal da primeira fatia.
 - **Aviso de lado suspeito:** apareceu em 2 mãos de "por favor", em que as duas mãos se tocam. O lado estava certo; é um falso alarme do teste de flexão quando os dedos se sobrepõem.
 - **Configuração (sem referência):** dedos `g` (estendido) com 100% em "obrigado", "legal" e "tchau", em que a mão aberta é visível na imagem. O polegar sai `y` na maioria dos quadros. Não temos a escrita ELiS dessas palavras para dizer se está certo.
 - **Ponto de articulação (sem referência):** a mão na boca ou no queixo no início de "bom dia", "boa tarde" e "boa noite" virou Boca ou Queixo; "prazer em conhecer" alternou Tórax e Abaixo do queixo; "obrigado" começou em Sobrancelha ou Olho, quando visualmente a mão está na testa e na têmpora. Duas mãos próximas na frente do corpo ("de nada", "por favor") viraram Ponta de dedo, porque o 2D não separa sobreposição de contato.
-- **Proporções** (42 mãos):
-  - o comprimento total de cada dedo do rig fica a até 7% do medido;
-  - no rig, a falange da base é de 20% a 43% mais longa e a da ponta de 19% a 32% mais curta;
-  - o polegar medido é 22% mais longo;
-  - a palma medida é 7% mais estreita.
-  A tabela completa está em `docs/pipeline-captura.md` §9.
-- **Testes e build:** 30 testes automatizados passando (8 novos de ponto de articulação, 2 de proporções); lint e build sem erros. O bundle do teclado não mudou (`main` 49,13 kB; compartilhado 854,53 kB); o chunk do estúdio foi de 194 para 203 kB.
+- **Proporções:**
+  - Pelos pontos 3D do MediaPipe (42 mãos), o comprimento total de cada dedo do rig fica a até 7% do medido, mas a falange da base do rig seria de 20% a 43% mais longa e a da ponta de 19% a 32% mais curta.
+  - Desconfiamos do resultado, porque numa mão real a falange da base é claramente a mais longa, e nos 3D medidos ela saiu do tamanho da ponta. Refizemos a medida com os pontos 2D da imagem em quadros de mão aberta e de frente para a câmera ("tchau" #0 e #1, "legal" #1). Em 2D o indicador mede de 0,38 a 0,42 / 0,24 a 0,27 / 0,21 a 0,23, contra 0,404 / 0,269 / 0,212 no rig.
+  - Conclusão: as falanges do rig estão coerentes, e a distorção vem da profundidade estimada pelo MediaPipe. A palma do rig pode estar de 8% a 15% larga demais. O polegar não tem medida confiável.
+  - As tabelas estão em `docs/pipeline-captura.md` §9.
+- **Testes e build:** 30 testes automatizados passando (9 novos de ponto de articulação, 2 de proporções); lint e build sem erros. O bundle do teclado não mudou (`main` 49,13 kB; compartilhado 854,53 kB); o chunk do estúdio foi de 194 para 203 kB.
 - **Estúdio:** conferido no navegador com "obrigado.gif". Os 2 quadros foram detectados, a sobreposição bate com cada quadro ao mover a linha do tempo, e as sugestões e o painel de proporções aparecem.
 
 ## Problemas e correções
 
 - `frameAt` devolve o quadro mais próximo do tempo pedido. Num GIF, o quadro visível é o último que começou, então criamos `keyframeTime` no estúdio para buscar o quadro certo.
 - Um script de edição com heredoc falhou no shell do Windows (aspas não fechadas); passamos a gravar o script em arquivo antes de rodar.
+- O botão "Salvar clipe no repositório" ficava ativo para GIFs de poses-chave, contra a regra de não versionar dados do IFPR e de não fazer clipe de poses-chave. Desativamos o botão para esse tipo de captura (o download local continua).
 
 ## Limitações
 
 - **Uma pessoa só e uma variante regional.** Os sinais do IFPR podem ter variação regional (Paraná) e não foram validados pela Letras-UFG.
-- **Pontos 3D estimados.** O MediaPipe estima os pontos 3D com um modelo treinado, que tende a uma mão média. As proporções medidas podem refletir esse modelo tanto quanto a mão real.
+- **Pontos 3D estimados.** O MediaPipe estima os pontos 3D com um modelo treinado. Nesta amostra eles distorceram a relação entre as falanges, então só servem para ângulos e orientação. A checagem em 2D usou só 3 quadros.
 - **Ponto de articulação em 2D.** Sem profundidade, sobreposição na imagem conta como contato. Locais que só se separam com profundidade ou com mais detalhe do rosto ficam de fora.
 - **Nenhuma sugestão foi conferida contra uma escrita ELiS de referência.**
 - **Licença.** A página do IFPR não declara licença. Os GIFs ficam só na máquina, e os landmarks derivados deles não foram versionados.
@@ -70,5 +71,5 @@ A dupla esclareceu que a pipeline serve para melhorar de forma contínua três c
 
 - Obter da monitora da Letras a escrita ELiS validada de alguns cumprimentos do IFPR, para medir o acerto da configuração e do ponto de articulação.
 - Decidir com a dupla se o teclado deve usar o posicionamento medido (fidelidade) ou continuar com o atual (legibilidade).
-- Repetir a medição de proporções com as gravações da monitora antes de mudar o rig.
+- Medir proporções em 2D, só em quadros com a palma de frente e os dedos esticados, com várias pessoas, antes de mudar a largura da palma do rig.
 - Perguntar ao IFPR sobre a licença, se os dados derivados forem para o repositório ou para o jogo.

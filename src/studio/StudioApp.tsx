@@ -709,7 +709,7 @@ export function StudioApp() {
               <Field label="Escrita ELiS">
                 <div className="flex gap-1.5">
                   <input value={clipForm.elis} onChange={(e) => setClipForm({ ...clipForm, elis: e.target.value })} className="input font-elis text-xl leading-none pt-1.5" />
-                  <button type="button" onClick={useSuggestionAsElis} disabled={!suggestions.dominant} className="shrink-0 px-2 rounded-lg bg-ink-800 text-[11px] text-ink-300 disabled:opacity-40" title="Preenche polegar, dedos e palma com a sugestão do quadro atual">
+                  <button type="button" onClick={useSuggestionAsElis} disabled={!suggestions.dominant} className="shrink-0 px-2 rounded-lg bg-ink-800 text-[11px] text-ink-300 disabled:opacity-40" title="Preenche polegar, dedos, palma e Local com a sugestão do quadro atual">
                     Sugestão
                   </button>
                 </div>
@@ -734,7 +734,7 @@ export function StudioApp() {
               </label>
             </div>
             <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={() => void saveClip()} disabled={!capture} className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-gold-400 hover:bg-gold-300 text-void text-xs font-semibold disabled:opacity-40">
+              <button type="button" onClick={() => void saveClip()} disabled={!capture || capture.source.kind === 'keyframes'} title={capture?.source.kind === 'keyframes' ? 'GIF de poses-chave não vira clipe: não há o movimento entre as poses' : undefined} className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-gold-400 hover:bg-gold-300 text-void text-xs font-semibold disabled:opacity-40">
                 <Save className="w-3.5 h-3.5" /> Salvar clipe no repositório
               </button>
               <button
@@ -781,7 +781,7 @@ const ProportionsPanel: React.FC<{ report: ProportionReport }> = ({ report }) =>
   return (
     <Panel title="Proporções da mão (modelagem)">
       <p className="text-[11px] text-ink-400">
-        Segmentos em comprimentos de palma, mediana de {report.samples} mão(s) desta captura, comparados com o rig. Largura da
+        Segmentos em comprimentos de palma pelos pontos 3D do detector, mediana de {report.samples} mão(s) desta captura, comparados com o rig. Os pontos 3D erram a profundidade e distorcem as falanges: use para comparar capturas, não para corrigir o rig. Largura da
         palma: {report.measured.palmWidth.toFixed(2)} × {report.rig.palmWidth.toFixed(2)} no rig ({pct(report.measured.palmWidth, report.rig.palmWidth)}).
       </p>
       <table className="w-full text-[11px] font-mono text-ink-300">

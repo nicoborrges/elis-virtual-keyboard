@@ -1,6 +1,6 @@
 # Pipeline de captura — fotos e vídeos de Libras → rig 3D
 
-> **Status (2026-11-26):** funcionando no **Estúdio de Captura** (`/estudio.html`). Primeiro teste com mãos humanas: os 13 GIFs de cumprimentos do IFPR (45 mãos em 40 quadros). O corpo decidiu o lado de todas, conferido visualmente em 23 quadros, e o rótulo do detector concordou com o corpo em 100%. Configuração de mão, ponto de articulação e proporções foram medidos, mas **nenhuma sugestão ELiS foi conferida contra uma escrita de referência**: falta a escrita ELiS validada dessas palavras.
+> **Status (2026-11-26):** funcionando no **Estúdio de Captura** (`/estudio.html`). Primeiro teste com mãos humanas: os 13 GIFs de cumprimentos do IFPR (44 mãos em 40 quadros). O corpo decidiu o lado de todas, conferido visualmente em 23 quadros, e o rótulo do detector concordou com o corpo em 100%. Configuração de mão, ponto de articulação e proporções foram medidos, mas **nenhuma sugestão ELiS foi conferida contra uma escrita de referência**: falta a escrita ELiS validada dessas palavras.
 
 ## 1. Para que serve
 
@@ -11,7 +11,7 @@ A pipeline é um **ciclo de melhoria** do modelo 3D: material de referência em 
 | **Configuração da mão** (etapas 1–3: polegar, dedos, palma) | Ângulos de cada articulação e orientação do punho | Medida e calibrável (`src/data/rigCalibration.json`) |
 | **Posicionamento** (etapa 4: ponto de articulação) | Posição da mão em relação ao corpo (rosto, tronco, outro braço, outra mão) | Medida e sugerida; ainda não aplicada ao teclado |
 | **Animação** (etapa 5 e palavras inteiras) | Trajetória e ângulos ao longo do tempo | Clipes de vídeo (`src/data/clips/`); movimento ainda não classificado |
-| **Modelagem** (geometria da mão) | Comprimento de cada falange e largura da palma | Medida e comparada com o rig; ainda não aplicada |
+| **Modelagem** (geometria da mão) | Comprimento de cada falange e largura da palma | Medida e comparada com o rig; ainda não aplicada (ver §9: os pontos 3D distorcem as falanges) |
 
 Entradas aceitas:
 
@@ -105,7 +105,7 @@ Nenhum desses arquivos guarda imagem, mas eles guardam o **nome do arquivo de or
 
 - **Rig espelhado:** o teclado mostra a mão dominante à **direita da tela**, como um espelho de quem sinaliza. Por isso o solver espelha a orientação do punho e o deslocamento horizontal. Assim, "palma medial" continua apontando para o centro e "para a direita" continua sendo a direita de quem sinaliza.
 - **Canhotos:** são espelhados para o rig, e a mão dominante vira sempre a do lado direito da tela.
-- **Rótulo de mão do MediaPipe 1.2.3:** é a mão do sujeito, e imagem espelhada inverte, como diz a documentação. **Confirmado em 2026-11-26** com os 13 GIFs de cumprimentos do IFPR (câmera comum, sem espelho): o rótulo concordou com o corpo em 45 de 45 mãos. O corpo continua com prioridade, e o Estúdio mantém a concordância e o botão **Trocar D↔E** para mídias novas.
+- **Rótulo de mão do MediaPipe 1.2.3:** é a mão do sujeito, e imagem espelhada inverte, como diz a documentação. **Confirmado em 2026-11-26** com os 13 GIFs de cumprimentos do IFPR (câmera comum, sem espelho): o rótulo concordou com o corpo em 44 de 44 mãos. O corpo continua com prioridade, e o Estúdio mantém a concordância e o botão **Trocar D↔E** para mídias novas.
 - **Ponto de articulação em 2D:** a câmera não vê profundidade. "Perto" quer dizer sobreposto na imagem. Por isso o ombro, o punho e o cotovelo do mesmo lado da mão ficam fora das âncoras (a mão erguida na frente do próprio ombro não o toca), e duas mãos próximas podem aparecer como contato.
 
 ## 7. Testes
@@ -140,7 +140,7 @@ Os testes sintéticos compartilham as convenções do próprio solver. Só filma
 
 ## 9. Primeira medição de proporções (2026-11-26)
 
-42 mãos dos GIFs de cumprimentos do IFPR (uma pessoa sinalizando), em comprimentos de palma, mediana:
+**Pontos 3D do MediaPipe** (`world`), 42 mãos dos GIFs de cumprimentos do IFPR (uma pessoa sinalizando), em comprimentos de palma, mediana:
 
 | Segmento | Medido | Rig | Diferença |
 |---|---|---|---|
@@ -151,4 +151,18 @@ Os testes sintéticos compartilham as convenções do próprio solver. Só filma
 | Anelar: base / meio / ponta | 0,319 / 0,284 / 0,280 | 0,404 / 0,269 / 0,212 | total 0% |
 | Mínimo: base / meio / ponta | 0,234 / 0,250 / 0,225 | 0,317 / 0,212 / 0,183 | total 0% |
 
-O comprimento total dos dedos do rig está certo, mas no rig a falange da base é 20–43% mais longa que a medida e a da ponta 19–32% mais curta, e o polegar é curto. Antes de mudar o rig: os pontos 3D do MediaPipe saem de um modelo treinado, que tende a uma mão média, e a amostra tem uma pessoa só. Vale repetir com as gravações da monitora.
+Pelos pontos 3D, o rig teria a falange da base longa demais e a da ponta curta demais. **A checagem em 2D desmente isso.** Nos quadros com a mão aberta e de frente para a câmera, em que a profundidade quase não interfere, medimos nos pontos da imagem:
+
+| Quadro | Indicador: base / meio / ponta | Médio: base / meio / ponta | Largura da palma |
+|---|---|---|---|
+| tchau #0 | 0,407 / 0,265 / 0,229 | 0,444 / 0,312 / 0,265 | 0,562 |
+| tchau #1 | 0,379 / 0,238 / 0,206 | 0,425 / 0,277 / 0,231 | 0,582 |
+| legal #1 | 0,418 / 0,246 / 0,207 | 0,489 / 0,298 / 0,242 | 0,547 |
+| **Rig** | 0,404 / 0,269 / 0,212 | 0,442 / 0,298 / 0,221 | 0,629 |
+
+Em 2D o rig fica perto do medido, com a falange da base claramente a mais longa, como numa mão real. A distorção está nos pontos 3D (`world`) do MediaPipe, que saem de um modelo treinado e erram a profundidade entre as articulações. Conclusões:
+
+- **Não usar os pontos 3D para corrigir o comprimento das falanges.** Eles servem para ângulos e orientação, não para medir ossos.
+- **A palma do rig parece 8–15% larga demais** (0,63 contra 0,55–0,58 em 2D). Vale confirmar com mais quadros e mais pessoas.
+- **O polegar** fica fora do plano da imagem na maioria dos quadros, então nem 2D nem 3D dão uma medida confiável aqui.
+- Para medir proporções, a próxima versão deve usar os pontos 2D só em quadros com a palma de frente para a câmera e os dedos esticados, de várias pessoas (gravações da monitora).
